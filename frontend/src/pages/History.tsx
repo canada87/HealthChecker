@@ -5,6 +5,7 @@ import type { MedicationLog, IllnessLog, Medication, Illness, IllnessEpisode } f
 import CalendarView from '../components/CalendarView'
 import LogPastModal from '../components/LogPastModal'
 import EditLogModal from '../components/EditLogModal'
+import EditEpisodeModal from '../components/EditEpisodeModal'
 import { format, isSameDay } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { Trash2, Plus, Pencil, Clock } from 'lucide-react'
@@ -57,6 +58,7 @@ export default function History() {
   const [tab, setTab] = useState<'cal' | 'list'>('cal')
   const [showModal, setShowModal] = useState(false)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
+  const [editEpisode, setEditEpisode] = useState<IllnessEpisode | null>(null)
   const [listFilter, setListFilter] = useState<{ type: 'med' | 'ill' | 'episode'; id: number } | null>(null)
 
   const load = useCallback(async () => {
@@ -203,7 +205,10 @@ export default function History() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => deleteEp(ep.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                  <div className="flex">
+                    <button onClick={() => setEditEpisode(ep)} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
+                    <button onClick={() => deleteEp(ep.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                  </div>
                 </div>
               ))}
 
@@ -340,7 +345,10 @@ export default function History() {
                           </div>
                         </div>
                       </div>
-                      <button onClick={() => deleteEp(ep.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                      <div className="flex">
+                        <button onClick={() => setEditEpisode(ep)} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
+                        <button onClick={() => deleteEp(ep.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <EpisodeDuration started_at={ep.started_at} ended_at={ep.ended_at} />
@@ -388,6 +396,14 @@ export default function History() {
           color={editTarget.color}
           currentAt={editTarget.at}
           onClose={() => setEditTarget(null)}
+          onSaved={load}
+        />
+      )}
+
+      {editEpisode && (
+        <EditEpisodeModal
+          episode={editEpisode}
+          onClose={() => setEditEpisode(null)}
           onSaved={load}
         />
       )}

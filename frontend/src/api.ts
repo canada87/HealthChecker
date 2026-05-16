@@ -63,6 +63,9 @@ export const api = {
     req<IllnessEpisode>(`/illness-episodes/${epId}/end`, { method: 'PATCH', body: JSON.stringify({ ended_at: endedAt ?? null }) }),
   updateIllnessEpisode: (epId: number, data: { started_at?: string; ended_at?: string | null }) =>
     req<IllnessEpisode>(`/illness-episodes/${epId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  updateEpisodeLog: (logId: number, data: { intensity?: number; occurred_at?: string }) =>
+    req<IllnessEpisode>(`/illness-episode-logs/${logId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteEpisodeLog: (logId: number) => req<void>(`/illness-episode-logs/${logId}`, { method: 'DELETE' }),
   deleteIllnessEpisode: (epId: number) => req<void>(`/illness-episodes/${epId}`, { method: 'DELETE' }),
   getIllnessEpisodes: (userId: number) => req<IllnessEpisode[]>(`/users/${userId}/illness-episodes`),
   getActiveIllnessEpisodes: (userId: number) => req<IllnessEpisode[]>(`/users/${userId}/illness-episodes/active`),

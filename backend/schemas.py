@@ -134,6 +134,10 @@ class EpisodeUpdate(BaseModel):
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None
 
+class EpisodeLogUpdate(BaseModel):
+    occurred_at: Optional[datetime] = None
+    intensity: Optional[int] = None
+
 class StatItem(BaseModel):
     id: int
     name: str

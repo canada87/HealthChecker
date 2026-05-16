@@ -206,6 +206,31 @@ def update_illness_episode(db: Session, episode_id: int, started_at: datetime = 
     db.refresh(ep)
     return _sort_episode_logs(ep)
 
+def update_episode_log(db: Session, log_id: int, intensity: int = None, occurred_at: datetime = None):
+    log = db.query(IllnessLog).filter(IllnessLog.id == log_id, IllnessLog.episode_id != None).first()
+    if not log:
+        return None
+    if intensity is not None:
+        log.intensity = intensity
+    if occurred_at is not None:
+        log.occurred_at = occurred_at
+    db.commit()
+    ep = db.query(IllnessEpisode).filter(IllnessEpisode.id == log.episode_id).first()
+    if not ep:
+        return None
+    db.refresh(ep)
+    return _sort_episode_logs(ep)
+
+def delete_episode_log(db: Session, log_id: int):
+    log = db.query(IllnessLog).filter(IllnessLog.id == log_id, IllnessLog.episode_id != None).first()
+    if not log:
+        return None
+    ep_id = log.episode_id
+    db.delete(log)
+    db.commit()
+    ep = db.query(IllnessEpisode).filter(IllnessEpisode.id == ep_id).first()
+    return ep
+
 def delete_illness_episode(db: Session, episode_id: int):
     ep = db.query(IllnessEpisode).filter(IllnessEpisode.id == episode_id).first()
     if ep:

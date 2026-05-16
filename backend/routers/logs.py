@@ -89,6 +89,20 @@ def update_episode(ep_id: int, data: schemas.EpisodeUpdate, db: Session = Depend
         raise HTTPException(404, "Episode not found")
     return ep
 
+@router.patch("/illness-episode-logs/{log_id}", response_model=schemas.IllnessEpisodeOut)
+def update_episode_log(log_id: int, data: schemas.EpisodeLogUpdate, db: Session = Depends(get_db)):
+    ep = crud.update_episode_log(db, log_id, data.intensity, data.occurred_at)
+    if not ep:
+        raise HTTPException(404, "Log not found")
+    return ep
+
+@router.delete("/illness-episode-logs/{log_id}")
+def delete_episode_log(log_id: int, db: Session = Depends(get_db)):
+    ep = crud.delete_episode_log(db, log_id)
+    if ep is None:
+        raise HTTPException(404, "Log not found")
+    return {"ok": True}
+
 @router.delete("/illness-episodes/{ep_id}")
 def delete_episode(ep_id: int, db: Session = Depends(get_db)):
     ep = crud.delete_illness_episode(db, ep_id)
