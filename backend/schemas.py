@@ -70,6 +70,7 @@ class IllnessLogOut(BaseModel):
 
 class LogCreate(BaseModel):
     notes: Optional[str] = None
+    taken_at: Optional[datetime] = None
 
 class StatItem(BaseModel):
     id: int

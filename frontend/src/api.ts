@@ -34,10 +34,10 @@ export const api = {
     req<Illness>(`/illnesses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteIllness: (id: number) => req<void>(`/illnesses/${id}`, { method: 'DELETE' }),
 
-  logMedication: (medId: number, notes?: string) =>
-    req<MedicationLog>(`/medications/${medId}/log`, { method: 'POST', body: JSON.stringify({ notes: notes ?? null }) }),
-  logIllness: (illId: number, notes?: string) =>
-    req<IllnessLog>(`/illnesses/${illId}/log`, { method: 'POST', body: JSON.stringify({ notes: notes ?? null }) }),
+  logMedication: (medId: number, notes?: string, takenAt?: string) =>
+    req<MedicationLog>(`/medications/${medId}/log`, { method: 'POST', body: JSON.stringify({ notes: notes ?? null, taken_at: takenAt ?? null }) }),
+  logIllness: (illId: number, notes?: string, takenAt?: string) =>
+    req<IllnessLog>(`/illnesses/${illId}/log`, { method: 'POST', body: JSON.stringify({ notes: notes ?? null, taken_at: takenAt ?? null }) }),
 
   getMedicationLogs: (userId: number, year?: number, month?: number) => {
     const params = year && month ? `?year=${year}&month=${month}` : ''

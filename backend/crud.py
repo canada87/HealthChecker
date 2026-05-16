@@ -88,15 +88,15 @@ def delete_illness(db: Session, ill_id: int):
         db.commit()
     return ill
 
-def log_medication(db: Session, user_id: int, medication_id: int, notes: str = None):
-    log = MedicationLog(user_id=user_id, medication_id=medication_id, taken_at=datetime.utcnow(), notes=notes)
+def log_medication(db: Session, user_id: int, medication_id: int, notes: str = None, taken_at: datetime = None):
+    log = MedicationLog(user_id=user_id, medication_id=medication_id, taken_at=taken_at or datetime.utcnow(), notes=notes)
     db.add(log)
     db.commit()
     db.refresh(log)
     return log
 
-def log_illness(db: Session, user_id: int, illness_id: int, notes: str = None):
-    log = IllnessLog(user_id=user_id, illness_id=illness_id, occurred_at=datetime.utcnow(), notes=notes)
+def log_illness(db: Session, user_id: int, illness_id: int, notes: str = None, taken_at: datetime = None):
+    log = IllnessLog(user_id=user_id, illness_id=illness_id, occurred_at=taken_at or datetime.utcnow(), notes=notes)
     db.add(log)
     db.commit()
     db.refresh(log)

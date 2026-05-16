@@ -7,20 +7,20 @@ import crud, schemas
 router = APIRouter(tags=["logs"])
 
 @router.post("/medications/{med_id}/log", response_model=schemas.MedicationLogOut, status_code=201)
-def log_medication(med_id: int, data: schemas.LogCreate = schemas.LogCreate(), db: Session = Depends(get_db)):
+def log_medication(med_id: int, data: schemas.LogCreate, db: Session = Depends(get_db)):
     from models import Medication
     med = db.query(Medication).filter(Medication.id == med_id).first()
     if not med:
         raise HTTPException(404, "Medication not found")
-    return crud.log_medication(db, med.user_id, med_id, data.notes)
+    return crud.log_medication(db, med.user_id, med_id, data.notes, data.taken_at)
 
 @router.post("/illnesses/{ill_id}/log", response_model=schemas.IllnessLogOut, status_code=201)
-def log_illness(ill_id: int, data: schemas.LogCreate = schemas.LogCreate(), db: Session = Depends(get_db)):
+def log_illness(ill_id: int, data: schemas.LogCreate, db: Session = Depends(get_db)):
     from models import Illness
     ill = db.query(Illness).filter(Illness.id == ill_id).first()
     if not ill:
         raise HTTPException(404, "Illness not found")
-    return crud.log_illness(db, ill.user_id, ill_id, data.notes)
+    return crud.log_illness(db, ill.user_id, ill_id, data.notes, data.taken_at)
 
 @router.get("/users/{user_id}/medication-logs", response_model=list[schemas.MedicationLogOut])
 def get_medication_logs(user_id: int, year: Optional[int] = None, month: Optional[int] = None, db: Session = Depends(get_db)):

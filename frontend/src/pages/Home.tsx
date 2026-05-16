@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import type { Medication, Illness } from '../types'
-import { LogOut, Plus, Check } from 'lucide-react'
+import { LogOut, Plus, Check, CalendarDays } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
+import LogPastModal from '../components/LogPastModal'
 
 interface LoggedItem { id: number; type: 'med' | 'ill'; at: Date }
 
@@ -15,6 +16,7 @@ export default function Home() {
   const [recentLogs, setRecentLogs] = useState<LoggedItem[]>([])
   const [logging, setLogging] = useState<number | null>(null)
   const [justLogged, setJustLogged] = useState<number | null>(null)
+  const [showPastModal, setShowPastModal] = useState(false)
 
   const load = useCallback(async () => {
     if (!currentUser) return
@@ -83,6 +85,13 @@ export default function Home() {
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-slate-700">💊 Farmaci</h2>
+          <button
+            onClick={() => setShowPastModal(true)}
+            className="flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-500 transition-colors px-2 py-1"
+          >
+            <CalendarDays size={14} />
+            Passato
+          </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {medications.map(med => {
@@ -117,6 +126,13 @@ export default function Home() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-slate-700">🤒 Malattie</h2>
+          <button
+            onClick={() => setShowPastModal(true)}
+            className="flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-500 transition-colors px-2 py-1"
+          >
+            <CalendarDays size={14} />
+            Passato
+          </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {illnesses.map(ill => {
@@ -147,6 +163,14 @@ export default function Home() {
           )}
         </div>
       </section>
+      {showPastModal && (
+        <LogPastModal
+          medications={medications}
+          illnesses={illnesses}
+          onClose={() => setShowPastModal(false)}
+          onSaved={() => {}}
+        />
+      )}
     </div>
   )
 }

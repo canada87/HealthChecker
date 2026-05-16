@@ -1,27 +1,35 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
-import type { MedicationLog, IllnessLog } from '../types'
+import type { MedicationLog, IllnessLog, Medication, Illness } from '../types'
 import CalendarView from '../components/CalendarView'
+import LogPastModal from '../components/LogPastModal'
 import { format, isSameDay } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Plus } from 'lucide-react'
 
 export default function History() {
   const { currentUser } = useUser()
   const [medLogs, setMedLogs] = useState<MedicationLog[]>([])
   const [illLogs, setIllLogs] = useState<IllnessLog[]>([])
+  const [medications, setMedications] = useState<Medication[]>([])
+  const [illnesses, setIllnesses] = useState<Illness[]>([])
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
   const [tab, setTab] = useState<'cal' | 'list'>('cal')
+  const [showModal, setShowModal] = useState(false)
 
   const load = useCallback(async () => {
     if (!currentUser) return
-    const [ml, il] = await Promise.all([
+    const [ml, il, meds, ills] = await Promise.all([
       api.getMedicationLogs(currentUser.id),
       api.getIllnessLogs(currentUser.id),
+      api.getMedications(currentUser.id),
+      api.getIllnesses(currentUser.id),
     ])
     setMedLogs(ml)
     setIllLogs(il)
+    setMedications(meds)
+    setIllnesses(ills)
   }, [currentUser])
 
   useEffect(() => { load() }, [load])
@@ -62,11 +70,19 @@ export default function History() {
       {tab === 'cal' && (
         <>
           <CalendarView medLogs={medLogs} illLogs={illLogs} onDayClick={d => setSelectedDay(prev => prev && isSameDay(prev, d) ? null : d)} />
-          {selectedDay && (dayMedLogs.length > 0 || dayIllLogs.length > 0) && (
+          {selectedDay && (
             <div className="mt-4 bg-white rounded-2xl shadow-sm p-4">
-              <h3 className="font-semibold text-slate-700 mb-3 capitalize">
-                {format(selectedDay, 'd MMMM', { locale: it })}
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-slate-700 capitalize">
+                  {format(selectedDay, 'd MMMM', { locale: it })}
+                </h3>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-1 text-sm text-indigo-600 font-medium hover:text-indigo-700"
+                >
+                  <Plus size={16} /> Aggiungi
+                </button>
+              </div>
               {dayMedLogs.map(l => (
                 <div key={l.id} className="flex items-center justify-between py-2 border-b border-slate-50">
                   <div className="flex items-center gap-2">
@@ -91,6 +107,9 @@ export default function History() {
                   <button onClick={() => deleteIL(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={16} /></button>
                 </div>
               ))}
+              {dayMedLogs.length === 0 && dayIllLogs.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-2">Nessuna registrazione</p>
+              )}
             </div>
           )}
         </>
@@ -128,6 +147,16 @@ export default function History() {
             <div className="text-center text-slate-400 py-12">Nessuna registrazione</div>
           )}
         </div>
+      )}
+
+      {showModal && selectedDay && (
+        <LogPastModal
+          medications={medications}
+          illnesses={illnesses}
+          defaultDate={selectedDay}
+          onClose={() => setShowModal(false)}
+          onSaved={load}
+        />
       )}
     </div>
   )
