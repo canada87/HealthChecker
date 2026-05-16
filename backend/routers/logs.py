@@ -30,6 +30,20 @@ def get_medication_logs(user_id: int, year: Optional[int] = None, month: Optiona
 def get_illness_logs(user_id: int, year: Optional[int] = None, month: Optional[int] = None, db: Session = Depends(get_db)):
     return crud.get_illness_logs(db, user_id, year, month)
 
+@router.patch("/medication-logs/{log_id}", response_model=schemas.MedicationLogOut)
+def update_medication_log(log_id: int, data: schemas.LogUpdate, db: Session = Depends(get_db)):
+    log = crud.update_medication_log(db, log_id, data.taken_at)
+    if not log:
+        raise HTTPException(404, "Log not found")
+    return log
+
+@router.patch("/illness-logs/{log_id}", response_model=schemas.IllnessLogOut)
+def update_illness_log(log_id: int, data: schemas.LogUpdate, db: Session = Depends(get_db)):
+    log = crud.update_illness_log(db, log_id, data.taken_at)
+    if not log:
+        raise HTTPException(404, "Log not found")
+    return log
+
 @router.delete("/medication-logs/{log_id}")
 def delete_medication_log(log_id: int, db: Session = Depends(get_db)):
     log = crud.delete_medication_log(db, log_id)

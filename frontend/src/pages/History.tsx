@@ -4,9 +4,19 @@ import { useUser } from '../contexts/UserContext'
 import type { MedicationLog, IllnessLog, Medication, Illness } from '../types'
 import CalendarView from '../components/CalendarView'
 import LogPastModal from '../components/LogPastModal'
+import EditLogModal from '../components/EditLogModal'
 import { format, isSameDay } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, Pencil } from 'lucide-react'
+
+interface EditTarget {
+  logId: number
+  type: 'med' | 'ill'
+  name: string
+  emoji: string
+  color: string
+  at: Date
+}
 
 export default function History() {
   const { currentUser } = useUser()
@@ -17,6 +27,8 @@ export default function History() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
   const [tab, setTab] = useState<'cal' | 'list'>('cal')
   const [showModal, setShowModal] = useState(false)
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
+  const [listFilter, setListFilter] = useState<{ type: 'med' | 'ill'; id: number } | null>(null)
 
   const load = useCallback(async () => {
     if (!currentUser) return
@@ -47,9 +59,12 @@ export default function History() {
   }
 
   const recentAll = [
-    ...medLogs.slice(0, 20).map(l => ({ ...l, type: 'med' as const, at: new Date(l.taken_at) })),
-    ...illLogs.slice(0, 20).map(l => ({ ...l, type: 'ill' as const, at: new Date(l.occurred_at) })),
-  ].sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, 30)
+    ...medLogs.map(l => ({ ...l, type: 'med' as const, at: new Date(l.taken_at) })),
+    ...illLogs.map(l => ({ ...l, type: 'ill' as const, at: new Date(l.occurred_at) })),
+  ]
+    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .filter(item => !listFilter || (item.type === listFilter.type && (item.type === 'med' ? item.medication_id : item.illness_id) === listFilter.id))
+    .slice(0, 50)
 
   return (
     <div className="px-4 pt-6 pb-4">
@@ -92,7 +107,10 @@ export default function History() {
                       <div className="text-xs text-slate-400">{format(new Date(l.taken_at), 'HH:mm')}</div>
                     </div>
                   </div>
-                  <button onClick={() => deleteML(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={16} /></button>
+                  <div className="flex">
+                    <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
+                    <button onClick={() => deleteML(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                  </div>
                 </div>
               ))}
               {dayIllLogs.map(l => (
@@ -104,7 +122,10 @@ export default function History() {
                       <div className="text-xs text-slate-400">{format(new Date(l.occurred_at), 'HH:mm')}</div>
                     </div>
                   </div>
-                  <button onClick={() => deleteIL(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={16} /></button>
+                  <div className="flex">
+                    <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
+                    <button onClick={() => deleteIL(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                  </div>
                 </div>
               ))}
               {dayMedLogs.length === 0 && dayIllLogs.length === 0 && (
@@ -116,6 +137,53 @@ export default function History() {
       )}
 
       {tab === 'list' && (
+        <>
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-1 -mx-4 px-4 scrollbar-hide">
+          <button
+            onClick={() => setListFilter(null)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              !listFilter ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200'
+            }`}
+          >
+            Tutti
+          </button>
+          {medications.map(m => {
+            const active = listFilter?.type === 'med' && listFilter.id === m.id
+            return (
+              <button
+                key={`med-${m.id}`}
+                onClick={() => setListFilter(active ? null : { type: 'med', id: m.id })}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                style={{
+                  backgroundColor: active ? m.color : 'white',
+                  borderColor: active ? m.color : '#e2e8f0',
+                  color: active ? 'white' : '#64748b',
+                }}
+              >
+                <span>{m.emoji}</span>
+                {m.name}
+              </button>
+            )
+          })}
+          {illnesses.map(ill => {
+            const active = listFilter?.type === 'ill' && listFilter.id === ill.id
+            return (
+              <button
+                key={`ill-${ill.id}`}
+                onClick={() => setListFilter(active ? null : { type: 'ill', id: ill.id })}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                style={{
+                  backgroundColor: active ? ill.color : 'white',
+                  borderColor: active ? ill.color : '#e2e8f0',
+                  color: active ? 'white' : '#64748b',
+                }}
+              >
+                <span>{ill.emoji}</span>
+                {ill.name}
+              </button>
+            )
+          })}
+        </div>
         <div className="space-y-2">
           {recentAll.map((item, i) => (
             <div key={i} className="bg-white rounded-xl p-3 flex items-center justify-between shadow-sm">
@@ -135,18 +203,34 @@ export default function History() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => item.type === 'med' ? deleteML(item.id) : deleteIL(item.id)}
-                className="p-2 text-slate-300 hover:text-red-400"
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="flex">
+                <button
+                  onClick={() => setEditTarget({
+                    logId: item.id,
+                    type: item.type,
+                    name: item.type === 'med' ? item.medication.name : item.illness.name,
+                    emoji: item.type === 'med' ? item.medication.emoji : item.illness.emoji,
+                    color: item.type === 'med' ? item.medication.color : item.illness.color,
+                    at: item.at,
+                  })}
+                  className="p-2 text-slate-300 hover:text-indigo-400"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  onClick={() => item.type === 'med' ? deleteML(item.id) : deleteIL(item.id)}
+                  className="p-2 text-slate-300 hover:text-red-400"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
           {recentAll.length === 0 && (
             <div className="text-center text-slate-400 py-12">Nessuna registrazione</div>
           )}
         </div>
+        </>
       )}
 
       {showModal && selectedDay && (
@@ -155,6 +239,19 @@ export default function History() {
           illnesses={illnesses}
           defaultDate={selectedDay}
           onClose={() => setShowModal(false)}
+          onSaved={load}
+        />
+      )}
+
+      {editTarget && (
+        <EditLogModal
+          logId={editTarget.logId}
+          type={editTarget.type}
+          name={editTarget.name}
+          emoji={editTarget.emoji}
+          color={editTarget.color}
+          currentAt={editTarget.at}
+          onClose={() => setEditTarget(null)}
           onSaved={load}
         />
       )}

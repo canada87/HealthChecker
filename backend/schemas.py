@@ -1,6 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from datetime import datetime
 from typing import Optional
+
+def _utc_iso(v: datetime) -> str:
+    return v.strftime('%Y-%m-%dT%H:%M:%S') + 'Z'
 
 class UserCreate(BaseModel):
     name: str
@@ -60,6 +63,10 @@ class MedicationLogOut(BaseModel):
     medication: MedicationOut
     model_config = {"from_attributes": True}
 
+    @field_serializer('taken_at')
+    def serialize_taken_at(self, v: datetime) -> str:
+        return _utc_iso(v)
+
 class IllnessLogOut(BaseModel):
     id: int
     illness_id: int
@@ -68,9 +75,16 @@ class IllnessLogOut(BaseModel):
     illness: IllnessOut
     model_config = {"from_attributes": True}
 
+    @field_serializer('occurred_at')
+    def serialize_occurred_at(self, v: datetime) -> str:
+        return _utc_iso(v)
+
 class LogCreate(BaseModel):
     notes: Optional[str] = None
     taken_at: Optional[datetime] = None
+
+class LogUpdate(BaseModel):
+    taken_at: datetime
 
 class StatItem(BaseModel):
     id: int
@@ -81,3 +95,7 @@ class StatItem(BaseModel):
     count_7d: int
     count_30d: int
     count_total: int
+
+    @field_serializer('last_at')
+    def serialize_last_at(self, v: Optional[datetime]) -> Optional[str]:
+        return _utc_iso(v) if v else None

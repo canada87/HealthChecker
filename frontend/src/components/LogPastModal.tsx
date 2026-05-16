@@ -25,7 +25,7 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
     if (saving) return
     setSaving(true)
     try {
-      const takenAt = `${date}T${time}:00`
+      const takenAt = new Date(`${date}T${time}:00`).toISOString()
       if (tab === 'med') {
         await api.logMedication(item.id, undefined, takenAt)
       } else {

@@ -47,6 +47,10 @@ export const api = {
     const params = year && month ? `?year=${year}&month=${month}` : ''
     return req<IllnessLog[]>(`/users/${userId}/illness-logs${params}`)
   },
+  updateMedicationLog: (id: number, takenAt: string) =>
+    req<MedicationLog>(`/medication-logs/${id}`, { method: 'PATCH', body: JSON.stringify({ taken_at: takenAt }) }),
+  updateIllnessLog: (id: number, takenAt: string) =>
+    req<IllnessLog>(`/illness-logs/${id}`, { method: 'PATCH', body: JSON.stringify({ taken_at: takenAt }) }),
   deleteMedicationLog: (id: number) => req<void>(`/medication-logs/${id}`, { method: 'DELETE' }),
   deleteIllnessLog: (id: number) => req<void>(`/illness-logs/${id}`, { method: 'DELETE' }),
 

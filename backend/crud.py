@@ -118,6 +118,22 @@ def get_illness_logs(db: Session, user_id: int, year: int = None, month: int = N
         q = q.filter(IllnessLog.occurred_at >= start, IllnessLog.occurred_at < end)
     return q.order_by(IllnessLog.occurred_at.desc()).all()
 
+def update_medication_log(db: Session, log_id: int, taken_at: datetime):
+    log = db.query(MedicationLog).filter(MedicationLog.id == log_id).first()
+    if log:
+        log.taken_at = taken_at
+        db.commit()
+        db.refresh(log)
+    return log
+
+def update_illness_log(db: Session, log_id: int, taken_at: datetime):
+    log = db.query(IllnessLog).filter(IllnessLog.id == log_id).first()
+    if log:
+        log.occurred_at = taken_at
+        db.commit()
+        db.refresh(log)
+    return log
+
 def delete_medication_log(db: Session, log_id: int):
     log = db.query(MedicationLog).filter(MedicationLog.id == log_id).first()
     if log:
