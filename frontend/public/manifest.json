@@ -1,0 +1,13 @@
+{
+  "name": "HealthTracker",
+  "short_name": "Health",
+  "description": "Traccia farmaci e malattie facilmente",
+  "theme_color": "#6366f1",
+  "background_color": "#f8fafc",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

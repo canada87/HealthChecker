@@ -1,0 +1,55 @@
+import type { User, Medication, Illness, MedicationLog, IllnessLog, StatItem } from './types'
+
+const BASE = '/api'
+
+async function req<T>(path: string, opts?: RequestInit): Promise<T> {
+  const res = await fetch(BASE + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  if (res.status === 204) return undefined as T
+  return res.json()
+}
+
+export const api = {
+  getUsers: () => req<User[]>('/users'),
+  createUser: (name: string, is_admin = false) =>
+    req<User>('/users', { method: 'POST', body: JSON.stringify({ name, is_admin }) }),
+  updateUser: (id: number, data: Partial<User>) =>
+    req<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id: number) => req<void>(`/users/${id}`, { method: 'DELETE' }),
+
+  getMedications: (userId: number) => req<Medication[]>(`/users/${userId}/medications`),
+  createMedication: (userId: number, data: { name: string; color: string; emoji: string }) =>
+    req<Medication>(`/users/${userId}/medications`, { method: 'POST', body: JSON.stringify(data) }),
+  updateMedication: (id: number, data: Partial<Medication>) =>
+    req<Medication>(`/medications/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteMedication: (id: number) => req<void>(`/medications/${id}`, { method: 'DELETE' }),
+
+  getIllnesses: (userId: number) => req<Illness[]>(`/users/${userId}/illnesses`),
+  createIllness: (userId: number, data: { name: string; color: string; emoji: string }) =>
+    req<Illness>(`/users/${userId}/illnesses`, { method: 'POST', body: JSON.stringify(data) }),
+  updateIllness: (id: number, data: Partial<Illness>) =>
+    req<Illness>(`/illnesses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteIllness: (id: number) => req<void>(`/illnesses/${id}`, { method: 'DELETE' }),
+
+  logMedication: (medId: number, notes?: string) =>
+    req<MedicationLog>(`/medications/${medId}/log`, { method: 'POST', body: JSON.stringify({ notes: notes ?? null }) }),
+  logIllness: (illId: number, notes?: string) =>
+    req<IllnessLog>(`/illnesses/${illId}/log`, { method: 'POST', body: JSON.stringify({ notes: notes ?? null }) }),
+
+  getMedicationLogs: (userId: number, year?: number, month?: number) => {
+    const params = year && month ? `?year=${year}&month=${month}` : ''
+    return req<MedicationLog[]>(`/users/${userId}/medication-logs${params}`)
+  },
+  getIllnessLogs: (userId: number, year?: number, month?: number) => {
+    const params = year && month ? `?year=${year}&month=${month}` : ''
+    return req<IllnessLog[]>(`/users/${userId}/illness-logs${params}`)
+  },
+  deleteMedicationLog: (id: number) => req<void>(`/medication-logs/${id}`, { method: 'DELETE' }),
+  deleteIllnessLog: (id: number) => req<void>(`/illness-logs/${id}`, { method: 'DELETE' }),
+
+  getMedicationStats: (userId: number) => req<StatItem[]>(`/users/${userId}/stats/medications`),
+  getIllnessStats: (userId: number) => req<StatItem[]>(`/users/${userId}/stats/illnesses`),
+}
