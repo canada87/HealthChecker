@@ -58,6 +58,54 @@ def delete_illness_log(log_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Log not found")
     return {"ok": True}
 
+# --- Episode endpoints ---
+
+@router.post("/illnesses/{ill_id}/episode", response_model=schemas.IllnessEpisodeOut, status_code=201)
+def start_episode(ill_id: int, data: schemas.EpisodeCreate, db: Session = Depends(get_db)):
+    from models import Illness
+    ill = db.query(Illness).filter(Illness.id == ill_id).first()
+    if not ill:
+        raise HTTPException(404, "Illness not found")
+    return crud.start_illness_episode(db, ill.user_id, ill_id, data.intensity, data.notes, data.started_at)
+
+@router.post("/illness-episodes/{ep_id}/log", response_model=schemas.IllnessEpisodeOut)
+def add_intensity_log(ep_id: int, data: schemas.IntensityLogCreate, db: Session = Depends(get_db)):
+    ep = crud.add_episode_intensity_log(db, ep_id, data.intensity, data.notes, data.occurred_at)
+    if not ep:
+        raise HTTPException(404, "Episode not found")
+    return ep
+
+@router.patch("/illness-episodes/{ep_id}/end", response_model=schemas.IllnessEpisodeOut)
+def end_episode(ep_id: int, data: schemas.EpisodeEndRequest, db: Session = Depends(get_db)):
+    ep = crud.end_illness_episode(db, ep_id, data.ended_at)
+    if not ep:
+        raise HTTPException(404, "Episode not found")
+    return ep
+
+@router.patch("/illness-episodes/{ep_id}", response_model=schemas.IllnessEpisodeOut)
+def update_episode(ep_id: int, data: schemas.EpisodeUpdate, db: Session = Depends(get_db)):
+    ep = crud.update_illness_episode(db, ep_id, data.started_at, data.ended_at)
+    if not ep:
+        raise HTTPException(404, "Episode not found")
+    return ep
+
+@router.delete("/illness-episodes/{ep_id}")
+def delete_episode(ep_id: int, db: Session = Depends(get_db)):
+    ep = crud.delete_illness_episode(db, ep_id)
+    if not ep:
+        raise HTTPException(404, "Episode not found")
+    return {"ok": True}
+
+@router.get("/users/{user_id}/illness-episodes", response_model=list[schemas.IllnessEpisodeOut])
+def get_illness_episodes(user_id: int, db: Session = Depends(get_db)):
+    return crud.get_illness_episodes(db, user_id)
+
+@router.get("/users/{user_id}/illness-episodes/active", response_model=list[schemas.IllnessEpisodeOut])
+def get_active_illness_episodes(user_id: int, db: Session = Depends(get_db)):
+    return crud.get_active_illness_episodes(db, user_id)
+
+# --- Stats ---
+
 @router.get("/users/{user_id}/stats/medications", response_model=list[schemas.StatItem])
 def medication_stats(user_id: int, db: Session = Depends(get_db)):
     return crud.get_medication_stats(db, user_id)

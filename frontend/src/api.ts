@@ -1,4 +1,4 @@
-import type { User, Medication, Illness, MedicationLog, IllnessLog, StatItem } from './types'
+import type { User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode, StatItem } from './types'
 
 const BASE = '/api'
 
@@ -53,6 +53,19 @@ export const api = {
     req<IllnessLog>(`/illness-logs/${id}`, { method: 'PATCH', body: JSON.stringify({ taken_at: takenAt }) }),
   deleteMedicationLog: (id: number) => req<void>(`/medication-logs/${id}`, { method: 'DELETE' }),
   deleteIllnessLog: (id: number) => req<void>(`/illness-logs/${id}`, { method: 'DELETE' }),
+
+  // Episode API
+  startIllnessEpisode: (illId: number, intensity: number, notes?: string, startedAt?: string) =>
+    req<IllnessEpisode>(`/illnesses/${illId}/episode`, { method: 'POST', body: JSON.stringify({ intensity, notes: notes ?? null, started_at: startedAt ?? null }) }),
+  addEpisodeIntensityLog: (epId: number, intensity: number, notes?: string, occurredAt?: string) =>
+    req<IllnessEpisode>(`/illness-episodes/${epId}/log`, { method: 'POST', body: JSON.stringify({ intensity, notes: notes ?? null, occurred_at: occurredAt ?? null }) }),
+  endIllnessEpisode: (epId: number, endedAt?: string) =>
+    req<IllnessEpisode>(`/illness-episodes/${epId}/end`, { method: 'PATCH', body: JSON.stringify({ ended_at: endedAt ?? null }) }),
+  updateIllnessEpisode: (epId: number, data: { started_at?: string; ended_at?: string | null }) =>
+    req<IllnessEpisode>(`/illness-episodes/${epId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteIllnessEpisode: (epId: number) => req<void>(`/illness-episodes/${epId}`, { method: 'DELETE' }),
+  getIllnessEpisodes: (userId: number) => req<IllnessEpisode[]>(`/users/${userId}/illness-episodes`),
+  getActiveIllnessEpisodes: (userId: number) => req<IllnessEpisode[]>(`/users/${userId}/illness-episodes/active`),
 
   getMedicationStats: (userId: number) => req<StatItem[]>(`/users/${userId}/stats/medications`),
   getIllnessStats: (userId: number) => req<StatItem[]>(`/users/${userId}/stats/illnesses`),

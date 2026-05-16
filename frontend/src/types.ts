@@ -31,9 +31,28 @@ export interface MedicationLog {
 export interface IllnessLog {
   id: number
   illness_id: number
+  episode_id: number | null
   occurred_at: string
+  intensity: number | null
   notes: string | null
   illness: Illness
+}
+
+export interface IllnessEpisodeLog {
+  id: number
+  occurred_at: string
+  intensity: number | null
+  notes: string | null
+}
+
+export interface IllnessEpisode {
+  id: number
+  illness_id: number
+  user_id: number
+  started_at: string
+  ended_at: string | null
+  illness: Illness
+  logs: IllnessEpisodeLog[]
 }
 
 export interface StatItem {

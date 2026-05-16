@@ -4,6 +4,14 @@ import { api } from '../api'
 import type { Medication, Illness } from '../types'
 import { X } from 'lucide-react'
 
+const LEVELS = [
+  { value: 1, label: 'Lieve', color: '#22c55e' },
+  { value: 2, label: 'Moderata', color: '#84cc16' },
+  { value: 3, label: 'Forte', color: '#eab308' },
+  { value: 4, label: 'Molto forte', color: '#f97316' },
+  { value: 5, label: 'Severa', color: '#ef4444' },
+]
+
 interface Props {
   medications: Medication[]
   illnesses: Illness[]
@@ -17,19 +25,19 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
   const [date, setDate] = useState(format(ref, 'yyyy-MM-dd'))
   const [time, setTime] = useState(format(ref, 'HH:mm'))
   const [tab, setTab] = useState<'med' | 'ill'>('med')
+  const [illIntensity, setIllIntensity] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
-
-  const items = tab === 'med' ? medications : illnesses
 
   const handleLog = async (item: Medication | Illness) => {
     if (saving) return
+    if (tab === 'ill' && !illIntensity) return
     setSaving(true)
     try {
       const takenAt = new Date(`${date}T${time}:00`).toISOString()
       if (tab === 'med') {
         await api.logMedication(item.id, undefined, takenAt)
       } else {
-        await api.logIllness(item.id, undefined, takenAt)
+        await api.startIllnessEpisode(item.id, illIntensity!, undefined, takenAt)
       }
       onSaved()
       onClose()
@@ -37,6 +45,8 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
       setSaving(false)
     }
   }
+
+  const items = tab === 'med' ? medications : illnesses
 
   return (
     <div
@@ -91,13 +101,37 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto">
+        {tab === 'ill' && (
+          <div className="mb-4">
+            <p className="text-xs font-medium text-slate-500 mb-2">Intensità iniziale</p>
+            <div className="flex gap-2 justify-between">
+              {LEVELS.map(l => (
+                <button
+                  key={l.value}
+                  onClick={() => setIllIntensity(l.value)}
+                  className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border-2 transition-all"
+                  style={{
+                    borderColor: illIntensity === l.value ? l.color : '#e2e8f0',
+                    backgroundColor: illIntensity === l.value ? l.color + '18' : 'white',
+                  }}
+                >
+                  <span className="text-base font-bold" style={{ color: illIntensity === l.value ? l.color : '#94a3b8' }}>
+                    {l.value}
+                  </span>
+                  <span className="text-[10px] font-medium text-slate-500 leading-tight text-center">{l.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto">
           {items.map(item => (
             <button
               key={item.id}
               onClick={() => handleLog(item)}
-              disabled={saving}
-              className="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3 active:scale-95 transition-all shadow-sm disabled:opacity-50 text-left"
+              disabled={saving || (tab === 'ill' && !illIntensity)}
+              className="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3 active:scale-95 transition-all shadow-sm disabled:opacity-40 text-left"
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -114,6 +148,9 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
             </p>
           )}
         </div>
+        {tab === 'ill' && !illIntensity && items.length > 0 && (
+          <p className="text-xs text-slate-400 text-center mt-2">Seleziona un'intensità per continuare</p>
+        )}
       </div>
     </div>
   )

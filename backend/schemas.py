@@ -70,7 +70,9 @@ class MedicationLogOut(BaseModel):
 class IllnessLogOut(BaseModel):
     id: int
     illness_id: int
+    episode_id: Optional[int]
     occurred_at: datetime
+    intensity: Optional[int]
     notes: Optional[str]
     illness: IllnessOut
     model_config = {"from_attributes": True}
@@ -79,12 +81,58 @@ class IllnessLogOut(BaseModel):
     def serialize_occurred_at(self, v: datetime) -> str:
         return _utc_iso(v)
 
+class IllnessEpisodeLogOut(BaseModel):
+    id: int
+    occurred_at: datetime
+    intensity: Optional[int]
+    notes: Optional[str]
+    model_config = {"from_attributes": True}
+
+    @field_serializer('occurred_at')
+    def serialize_occurred_at(self, v: datetime) -> str:
+        return _utc_iso(v)
+
+class IllnessEpisodeOut(BaseModel):
+    id: int
+    illness_id: int
+    user_id: int
+    started_at: datetime
+    ended_at: Optional[datetime]
+    illness: IllnessOut
+    logs: list[IllnessEpisodeLogOut]
+    model_config = {"from_attributes": True}
+
+    @field_serializer('started_at')
+    def serialize_started_at(self, v: datetime) -> str:
+        return _utc_iso(v)
+
+    @field_serializer('ended_at')
+    def serialize_ended_at(self, v: Optional[datetime]) -> Optional[str]:
+        return _utc_iso(v) if v else None
+
 class LogCreate(BaseModel):
     notes: Optional[str] = None
     taken_at: Optional[datetime] = None
 
 class LogUpdate(BaseModel):
     taken_at: datetime
+
+class EpisodeCreate(BaseModel):
+    intensity: int
+    notes: Optional[str] = None
+    started_at: Optional[datetime] = None
+
+class IntensityLogCreate(BaseModel):
+    intensity: int
+    notes: Optional[str] = None
+    occurred_at: Optional[datetime] = None
+
+class EpisodeEndRequest(BaseModel):
+    ended_at: Optional[datetime] = None
+
+class EpisodeUpdate(BaseModel):
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
 
 class StatItem(BaseModel):
     id: int

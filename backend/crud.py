@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
-from models import User, Medication, Illness, MedicationLog, IllnessLog
+from models import User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode
 from schemas import UserCreate, UserUpdate, MedicationCreate, MedicationUpdate, IllnessCreate, IllnessUpdate
 
 def get_users(db: Session):
@@ -148,6 +148,92 @@ def delete_illness_log(db: Session, log_id: int):
         db.commit()
     return log
 
+# --- Episode CRUD ---
+
+def start_illness_episode(db: Session, user_id: int, illness_id: int, intensity: int, notes: str = None, started_at: datetime = None):
+    now = started_at or datetime.utcnow()
+    ep = IllnessEpisode(illness_id=illness_id, user_id=user_id, started_at=now)
+    db.add(ep)
+    db.flush()
+    log = IllnessLog(
+        user_id=user_id,
+        illness_id=illness_id,
+        episode_id=ep.id,
+        occurred_at=now,
+        intensity=intensity,
+        notes=notes,
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(ep)
+    return _sort_episode_logs(ep)
+
+def add_episode_intensity_log(db: Session, episode_id: int, intensity: int, notes: str = None, occurred_at: datetime = None):
+    ep = db.query(IllnessEpisode).filter(IllnessEpisode.id == episode_id).first()
+    if not ep:
+        return None
+    log = IllnessLog(
+        user_id=ep.user_id,
+        illness_id=ep.illness_id,
+        episode_id=ep.id,
+        occurred_at=occurred_at or datetime.utcnow(),
+        intensity=intensity,
+        notes=notes,
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(ep)
+    return _sort_episode_logs(ep)
+
+def end_illness_episode(db: Session, episode_id: int, ended_at: datetime = None):
+    ep = db.query(IllnessEpisode).filter(IllnessEpisode.id == episode_id).first()
+    if not ep:
+        return None
+    ep.ended_at = ended_at or datetime.utcnow()
+    db.commit()
+    db.refresh(ep)
+    return _sort_episode_logs(ep)
+
+def update_illness_episode(db: Session, episode_id: int, started_at: datetime = None, ended_at: datetime = None):
+    ep = db.query(IllnessEpisode).filter(IllnessEpisode.id == episode_id).first()
+    if not ep:
+        return None
+    if started_at is not None:
+        ep.started_at = started_at
+    if ended_at is not None:
+        ep.ended_at = ended_at
+    db.commit()
+    db.refresh(ep)
+    return _sort_episode_logs(ep)
+
+def delete_illness_episode(db: Session, episode_id: int):
+    ep = db.query(IllnessEpisode).filter(IllnessEpisode.id == episode_id).first()
+    if ep:
+        db.delete(ep)
+        db.commit()
+    return ep
+
+def _sort_episode_logs(ep):
+    ep.logs.sort(key=lambda l: l.occurred_at)
+    return ep
+
+def get_illness_episodes(db: Session, user_id: int):
+    eps = db.query(IllnessEpisode).filter(IllnessEpisode.user_id == user_id).order_by(IllnessEpisode.started_at.desc()).all()
+    for ep in eps:
+        _sort_episode_logs(ep)
+    return eps
+
+def get_active_illness_episodes(db: Session, user_id: int):
+    eps = db.query(IllnessEpisode).filter(
+        IllnessEpisode.user_id == user_id,
+        IllnessEpisode.ended_at == None,
+    ).all()
+    for ep in eps:
+        _sort_episode_logs(ep)
+    return eps
+
+# --- Stats ---
+
 def get_medication_stats(db: Session, user_id: int):
     meds = get_medications(db, user_id)
     now = datetime.utcnow()
@@ -179,23 +265,45 @@ def get_illness_stats(db: Session, user_id: int):
     now = datetime.utcnow()
     result = []
     for ill in ills:
-        last = db.query(IllnessLog).filter(
-            IllnessLog.illness_id == ill.id
+        # Episode-based counts (new style)
+        last_ep = db.query(IllnessEpisode).filter(
+            IllnessEpisode.illness_id == ill.id
+        ).order_by(IllnessEpisode.started_at.desc()).first()
+
+        # Legacy standalone logs (no episode)
+        last_old = db.query(IllnessLog).filter(
+            IllnessLog.illness_id == ill.id,
+            IllnessLog.episode_id == None,
         ).order_by(IllnessLog.occurred_at.desc()).first()
-        c7 = db.query(func.count(IllnessLog.id)).filter(
-            IllnessLog.illness_id == ill.id,
-            IllnessLog.occurred_at >= now - timedelta(days=7)
-        ).scalar()
-        c30 = db.query(func.count(IllnessLog.id)).filter(
-            IllnessLog.illness_id == ill.id,
-            IllnessLog.occurred_at >= now - timedelta(days=30)
-        ).scalar()
-        ctot = db.query(func.count(IllnessLog.id)).filter(
-            IllnessLog.illness_id == ill.id
-        ).scalar()
+
+        last_ep_at = last_ep.started_at if last_ep else None
+        last_old_at = last_old.occurred_at if last_old else None
+        if last_ep_at and last_old_at:
+            last_at = max(last_ep_at, last_old_at)
+        else:
+            last_at = last_ep_at or last_old_at
+
+        def count_ep(days):
+            return db.query(func.count(IllnessEpisode.id)).filter(
+                IllnessEpisode.illness_id == ill.id,
+                IllnessEpisode.started_at >= now - timedelta(days=days)
+            ).scalar()
+
+        def count_old(days):
+            return db.query(func.count(IllnessLog.id)).filter(
+                IllnessLog.illness_id == ill.id,
+                IllnessLog.episode_id == None,
+                IllnessLog.occurred_at >= now - timedelta(days=days)
+            ).scalar()
+
+        ctot_ep = db.query(func.count(IllnessEpisode.id)).filter(IllnessEpisode.illness_id == ill.id).scalar()
+        ctot_old = db.query(func.count(IllnessLog.id)).filter(IllnessLog.illness_id == ill.id, IllnessLog.episode_id == None).scalar()
+
         result.append({
             "id": ill.id, "name": ill.name, "color": ill.color, "emoji": ill.emoji,
-            "last_at": last.occurred_at if last else None,
-            "count_7d": c7, "count_30d": c30, "count_total": ctot
+            "last_at": last_at,
+            "count_7d": count_ep(7) + count_old(7),
+            "count_30d": count_ep(30) + count_old(30),
+            "count_total": ctot_ep + ctot_old,
         })
     return result

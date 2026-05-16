@@ -1,7 +1,6 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./healthtracker.db")
 
@@ -17,9 +16,22 @@ def get_db():
         db.close()
 
 def create_tables():
-    from models import User, Medication, Illness, MedicationLog, IllnessLog
+    from models import User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode
     Base.metadata.create_all(bind=engine)
+    _migrate_illness_tables()
     _seed_data()
+
+def _migrate_illness_tables():
+    with engine.connect() as conn:
+        for sql in [
+            "ALTER TABLE illness_logs ADD COLUMN episode_id INTEGER REFERENCES illness_episodes(id)",
+            "ALTER TABLE illness_logs ADD COLUMN intensity INTEGER",
+        ]:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:
+                pass
 
 def _seed_data():
     db = SessionLocal()

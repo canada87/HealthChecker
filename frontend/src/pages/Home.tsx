@@ -1,31 +1,45 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
-import type { Medication, Illness } from '../types'
+import type { Medication, Illness, IllnessEpisode } from '../types'
 import { LogOut, Plus, Check, CalendarDays } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import LogPastModal from '../components/LogPastModal'
+import IllnessEpisodeModal from '../components/IllnessEpisodeModal'
 
-interface LoggedItem { id: number; type: 'med' | 'ill'; at: Date }
+const LEVEL_COLORS = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444']
+
+function IntensityDots({ intensity, color }: { intensity: number; color: string }) {
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map(i => (
+        <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: i <= intensity ? color : '#e2e8f0' }} />
+      ))}
+    </div>
+  )
+}
 
 export default function Home() {
   const { currentUser, setCurrentUser } = useUser()
   const [medications, setMedications] = useState<Medication[]>([])
   const [illnesses, setIllnesses] = useState<Illness[]>([])
-  const [recentLogs, setRecentLogs] = useState<LoggedItem[]>([])
+  const [activeEpisodes, setActiveEpisodes] = useState<IllnessEpisode[]>([])
   const [logging, setLogging] = useState<number | null>(null)
   const [justLogged, setJustLogged] = useState<number | null>(null)
   const [showPastModal, setShowPastModal] = useState(false)
+  const [selectedIllness, setSelectedIllness] = useState<Illness | null>(null)
 
   const load = useCallback(async () => {
     if (!currentUser) return
-    const [meds, ills] = await Promise.all([
+    const [meds, ills, eps] = await Promise.all([
       api.getMedications(currentUser.id),
       api.getIllnesses(currentUser.id),
+      api.getActiveIllnessEpisodes(currentUser.id),
     ])
     setMedications(meds)
     setIllnesses(ills)
+    setActiveEpisodes(eps)
   }, [currentUser])
 
   useEffect(() => { load() }, [load])
@@ -34,27 +48,20 @@ export default function Home() {
     if (logging) return
     setLogging(med.id)
     try {
-      const log = await api.logMedication(med.id)
+      await api.logMedication(med.id)
       setJustLogged(med.id)
-      setRecentLogs(prev => [{ id: log.id, type: 'med', at: new Date(log.taken_at) }, ...prev.slice(0, 4)])
       setTimeout(() => setJustLogged(null), 2000)
     } finally {
       setLogging(null)
     }
   }
 
-  const handleLogIll = async (ill: Illness) => {
-    if (logging) return
-    setLogging(-ill.id)
-    try {
-      const log = await api.logIllness(ill.id)
-      setJustLogged(-ill.id)
-      setRecentLogs(prev => [{ id: log.id, type: 'ill', at: new Date(log.occurred_at) }, ...prev.slice(0, 4)])
-      setTimeout(() => setJustLogged(null), 2000)
-    } finally {
-      setLogging(null)
-    }
+  const handleIllnessTap = (ill: Illness) => {
+    setSelectedIllness(ill)
   }
+
+  const activeEpisodeForIllness = (illId: number) =>
+    activeEpisodes.find(ep => ep.illness_id === illId) ?? null
 
   return (
     <div className="px-4 pt-6 pb-4">
@@ -71,14 +78,34 @@ export default function Home() {
         </button>
       </div>
 
-      {recentLogs.length > 0 && (
-        <div className="mb-6 bg-green-50 rounded-2xl p-3 border border-green-100">
-          <p className="text-xs font-semibold text-green-700 mb-1">Registrato</p>
-          {recentLogs.slice(0, 1).map(l => (
-            <p key={l.id} className="text-sm text-green-800">
-              {formatDistanceToNow(l.at, { addSuffix: true, locale: it })}
-            </p>
-          ))}
+      {activeEpisodes.length > 0 && (
+        <div className="mb-5 bg-amber-50 border border-amber-100 rounded-2xl p-3">
+          <p className="text-xs font-semibold text-amber-700 mb-1.5">Malattie in corso</p>
+          <div className="space-y-1.5">
+            {activeEpisodes.map(ep => {
+              const lastLog = ep.logs[ep.logs.length - 1]
+              const intensity = lastLog?.intensity
+              const color = intensity ? LEVEL_COLORS[intensity - 1] : ep.illness.color
+              return (
+                <div key={ep.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>{ep.illness.emoji}</span>
+                    <span className="text-sm font-medium text-amber-800">{ep.illness.name}</span>
+                    <span className="text-xs text-amber-500">
+                      dal {format(new Date(ep.started_at), 'd MMM', { locale: it })}
+                    </span>
+                  </div>
+                  {intensity && <IntensityDots intensity={intensity} color={color} />}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {justLogged !== null && (
+        <div className="mb-5 bg-green-50 rounded-2xl p-3 border border-green-100">
+          <p className="text-sm text-green-800 font-medium">Registrato</p>
         </div>
       )}
 
@@ -136,22 +163,38 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           {illnesses.map(ill => {
-            const isJust = justLogged === -ill.id
+            const ep = activeEpisodeForIllness(ill.id)
+            const lastLog = ep?.logs[ep.logs.length - 1]
+            const intensity = lastLog?.intensity
+            const activeColor = intensity ? LEVEL_COLORS[intensity - 1] : ill.color
             return (
               <button
                 key={ill.id}
-                onClick={() => handleLogIll(ill)}
-                disabled={!!logging}
-                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col items-center gap-2 active:scale-95 transition-all disabled:opacity-70"
-                style={{ borderColor: isJust ? ill.color : undefined, borderWidth: isJust ? 2 : undefined }}
+                onClick={() => handleIllnessTap(ill)}
+                className="bg-white rounded-2xl p-4 shadow-sm border-2 flex flex-col items-center gap-2 active:scale-95 transition-all"
+                style={{ borderColor: ep ? ill.color : 'transparent', borderWidth: ep ? 2 : 0 }}
               >
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm"
-                  style={{ backgroundColor: ill.color + '20' }}
-                >
-                  {isJust ? <Check style={{ color: ill.color }} size={28} /> : ill.emoji}
+                <div className="relative">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm"
+                    style={{ backgroundColor: ill.color + '20' }}
+                  >
+                    {ill.emoji}
+                  </div>
+                  {ep && (
+                    <span
+                      className="absolute -top-1 -right-1 text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full"
+                      style={{ backgroundColor: ill.color }}
+                    >
+                      In corso
+                    </span>
+                  )}
                 </div>
                 <span className="text-sm font-semibold text-slate-700 text-center">{ill.name}</span>
+                {ep && intensity && (
+                  <IntensityDots intensity={intensity} color={activeColor} />
+                )}
+                {!ep && <span className="text-xs text-slate-400">Tocca per iniziare</span>}
               </button>
             )
           })}
@@ -163,12 +206,22 @@ export default function Home() {
           )}
         </div>
       </section>
+
       {showPastModal && (
         <LogPastModal
           medications={medications}
           illnesses={illnesses}
           onClose={() => setShowPastModal(false)}
-          onSaved={() => {}}
+          onSaved={load}
+        />
+      )}
+
+      {selectedIllness && (
+        <IllnessEpisodeModal
+          illness={selectedIllness}
+          activeEpisode={activeEpisodeForIllness(selectedIllness.id)}
+          onClose={() => setSelectedIllness(null)}
+          onAction={load}
         />
       )}
     </div>
