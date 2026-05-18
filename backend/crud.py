@@ -259,9 +259,10 @@ def get_active_illness_episodes(db: Session, user_id: int):
 
 # --- Stats ---
 
-def get_medication_stats(db: Session, user_id: int):
+def get_medication_stats(db: Session, user_id: int, window_days: int = 730):
     meds = get_medications(db, user_id)
     now = datetime.utcnow()
+    window_start = now - timedelta(days=window_days)
     result = []
     for med in meds:
         last = db.query(MedicationLog).filter(
@@ -278,16 +279,28 @@ def get_medication_stats(db: Session, user_id: int):
         ctot = db.query(func.count(MedicationLog.id)).filter(
             MedicationLog.medication_id == med.id
         ).scalar()
+
+        events_in_window = db.query(MedicationLog.taken_at).filter(
+            MedicationLog.medication_id == med.id,
+            MedicationLog.taken_at >= window_start
+        ).order_by(MedicationLog.taken_at).all()
+        avg_freq = None
+        if len(events_in_window) >= 2:
+            span = (events_in_window[-1][0] - events_in_window[0][0]).total_seconds() / 86400
+            avg_freq = span / (len(events_in_window) - 1)
+
         result.append({
             "id": med.id, "name": med.name, "color": med.color, "emoji": med.emoji,
             "last_at": last.taken_at if last else None,
-            "count_7d": c7, "count_30d": c30, "count_total": ctot
+            "count_7d": c7, "count_30d": c30, "count_total": ctot,
+            "avg_frequency_days": avg_freq,
         })
     return result
 
-def get_illness_stats(db: Session, user_id: int):
+def get_illness_stats(db: Session, user_id: int, window_days: int = 730):
     ills = get_illnesses(db, user_id)
     now = datetime.utcnow()
+    window_start = now - timedelta(days=window_days)
     result = []
     for ill in ills:
         # Episode-based counts (new style)
@@ -324,11 +337,27 @@ def get_illness_stats(db: Session, user_id: int):
         ctot_ep = db.query(func.count(IllnessEpisode.id)).filter(IllnessEpisode.illness_id == ill.id).scalar()
         ctot_old = db.query(func.count(IllnessLog.id)).filter(IllnessLog.illness_id == ill.id, IllnessLog.episode_id == None).scalar()
 
+        ep_dates = [r[0] for r in db.query(IllnessEpisode.started_at).filter(
+            IllnessEpisode.illness_id == ill.id,
+            IllnessEpisode.started_at >= window_start
+        ).all()]
+        old_dates = [r[0] for r in db.query(IllnessLog.occurred_at).filter(
+            IllnessLog.illness_id == ill.id,
+            IllnessLog.episode_id == None,
+            IllnessLog.occurred_at >= window_start
+        ).all()]
+        all_dates = sorted(ep_dates + old_dates)
+        avg_freq = None
+        if len(all_dates) >= 2:
+            span = (all_dates[-1] - all_dates[0]).total_seconds() / 86400
+            avg_freq = span / (len(all_dates) - 1)
+
         result.append({
             "id": ill.id, "name": ill.name, "color": ill.color, "emoji": ill.emoji,
             "last_at": last_at,
             "count_7d": count_ep(7) + count_old(7),
             "count_30d": count_ep(30) + count_old(30),
             "count_total": ctot_ep + ctot_old,
+            "avg_frequency_days": avg_freq,
         })
     return result

@@ -4,6 +4,9 @@ import { useUser } from '../contexts/UserContext'
 import type { Medication, Illness } from '../types'
 import { Plus, Pencil, Trash2, X, Check } from 'lucide-react'
 
+const FREQ_WINDOW_KEY = 'freqWindowYears'
+const DEFAULT_WINDOW_YEARS = 2
+
 const EMOJIS_MED = ['💊', '💉', '🩺', '🧴', '🩹', '🔴', '🟠', '⚪']
 const EMOJIS_ILL = ['🤒', '🤧', '😷', '🤮', '🤕', '🫁', '🦠', '🤢']
 const COLORS = ['#4CAF50', '#2196F3', '#9C27B0', '#FF9800', '#F44336', '#00BCD4', '#795548', '#607D8B']
@@ -69,6 +72,10 @@ export default function Settings() {
   const [editIll, setEditIll] = useState<Illness | null>(null)
   const [medForm, setMedForm] = useState<FormState>(defaultMedForm)
   const [illForm, setIllForm] = useState<FormState>(defaultIllForm)
+  const [freqWindowYears, setFreqWindowYears] = useState<number>(() => {
+    const stored = localStorage.getItem(FREQ_WINDOW_KEY)
+    return stored ? parseFloat(stored) : DEFAULT_WINDOW_YEARS
+  })
 
   const load = useCallback(async () => {
     if (!currentUser) return
@@ -108,9 +115,42 @@ export default function Settings() {
     load()
   }
 
+  const handleFreqWindowChange = (years: number) => {
+    setFreqWindowYears(years)
+    localStorage.setItem(FREQ_WINDOW_KEY, String(years))
+  }
+
   return (
     <div className="px-4 pt-6 pb-4">
       <h1 className="text-2xl font-bold text-slate-800 mb-6">Impostazioni</h1>
+
+      <section className="mb-6">
+        <h2 className="text-lg font-bold text-slate-700 mb-3">📊 Statistiche</h2>
+        <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-1">Finestra per frequenza media</p>
+            <p className="text-xs text-slate-400 mb-3">
+              Periodo su cui calcolare ogni quanti giorni viene preso il farmaco o compare la malattia.
+              Il calcolo parte dal primo evento nella finestra.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {[1, 2, 3, 5, 10].map(y => (
+                <button
+                  key={y}
+                  onClick={() => handleFreqWindowChange(y)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    freqWindowYears === y
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {y} {y === 1 ? 'anno' : 'anni'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">

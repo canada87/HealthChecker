@@ -147,6 +147,7 @@ class StatItem(BaseModel):
     count_7d: int
     count_30d: int
     count_total: int
+    avg_frequency_days: Optional[float] = None
 
     @field_serializer('last_at')
     def serialize_last_at(self, v: Optional[datetime]) -> Optional[str]:

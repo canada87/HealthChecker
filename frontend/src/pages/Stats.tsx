@@ -5,6 +5,24 @@ import type { StatItem } from '../types'
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
 
+const STORAGE_KEY = 'freqWindowYears'
+const DEFAULT_WINDOW_YEARS = 2
+
+function getWindowDays(): number {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  const years = stored ? parseFloat(stored) : DEFAULT_WINDOW_YEARS
+  return Math.round(years * 365)
+}
+
+function formatFrequency(days: number | null): string {
+  if (days === null) return '—'
+  if (days < 1) return `ogni ${(days * 24).toFixed(1)} ore`
+  if (days < 7) return `ogni ${days.toFixed(1)} gg`
+  if (days < 30) return `ogni ${(days / 7).toFixed(1)} sett`
+  if (days < 365) return `ogni ${(days / 30.44).toFixed(1)} mesi`
+  return `ogni ${(days / 365).toFixed(1)} anni`
+}
+
 function StatCard({ item }: { item: StatItem }) {
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm">
@@ -24,14 +42,17 @@ function StatCard({ item }: { item: StatItem }) {
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 text-center">
+      <div className="grid grid-cols-2 gap-2 text-center">
         {[
-          { label: '7 giorni', val: item.count_7d },
-          { label: '30 giorni', val: item.count_30d },
-          { label: 'Totale', val: item.count_total },
-        ].map(({ label, val }) => (
+          { label: '7 giorni', val: item.count_7d, isNumber: true },
+          { label: '30 giorni', val: item.count_30d, isNumber: true },
+          { label: 'Totale', val: item.count_total, isNumber: true },
+          { label: 'Frequenza media', val: item.avg_frequency_days, isNumber: false },
+        ].map(({ label, val, isNumber }) => (
           <div key={label} className="bg-slate-50 rounded-xl py-2">
-            <div className="text-xl font-bold" style={{ color: item.color }}>{val}</div>
+            <div className="text-xl font-bold" style={{ color: item.color }}>
+              {isNumber ? (val as number) : formatFrequency(val as number | null)}
+            </div>
             <div className="text-xs text-slate-400">{label}</div>
           </div>
         ))}
@@ -48,9 +69,10 @@ export default function Stats() {
 
   const load = useCallback(async () => {
     if (!currentUser) return
+    const windowDays = getWindowDays()
     const [ms, is] = await Promise.all([
-      api.getMedicationStats(currentUser.id),
-      api.getIllnessStats(currentUser.id),
+      api.getMedicationStats(currentUser.id, windowDays),
+      api.getIllnessStats(currentUser.id, windowDays),
     ])
     setMedStats(ms)
     setIllStats(is)

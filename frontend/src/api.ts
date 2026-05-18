@@ -70,6 +70,8 @@ export const api = {
   getIllnessEpisodes: (userId: number) => req<IllnessEpisode[]>(`/users/${userId}/illness-episodes`),
   getActiveIllnessEpisodes: (userId: number) => req<IllnessEpisode[]>(`/users/${userId}/illness-episodes/active`),
 
-  getMedicationStats: (userId: number) => req<StatItem[]>(`/users/${userId}/stats/medications`),
-  getIllnessStats: (userId: number) => req<StatItem[]>(`/users/${userId}/stats/illnesses`),
+  getMedicationStats: (userId: number, windowDays?: number) =>
+    req<StatItem[]>(`/users/${userId}/stats/medications${windowDays ? `?window_days=${windowDays}` : ''}`),
+  getIllnessStats: (userId: number, windowDays?: number) =>
+    req<StatItem[]>(`/users/${userId}/stats/illnesses${windowDays ? `?window_days=${windowDays}` : ''}`),
 }

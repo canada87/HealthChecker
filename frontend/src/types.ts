@@ -64,4 +64,5 @@ export interface StatItem {
   count_7d: number
   count_30d: number
   count_total: number
+  avg_frequency_days: number | null
 }

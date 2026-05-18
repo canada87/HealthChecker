@@ -121,9 +121,9 @@ def get_active_illness_episodes(user_id: int, db: Session = Depends(get_db)):
 # --- Stats ---
 
 @router.get("/users/{user_id}/stats/medications", response_model=list[schemas.StatItem])
-def medication_stats(user_id: int, db: Session = Depends(get_db)):
-    return crud.get_medication_stats(db, user_id)
+def medication_stats(user_id: int, window_days: int = 730, db: Session = Depends(get_db)):
+    return crud.get_medication_stats(db, user_id, window_days=window_days)
 
 @router.get("/users/{user_id}/stats/illnesses", response_model=list[schemas.StatItem])
-def illness_stats(user_id: int, db: Session = Depends(get_db)):
-    return crud.get_illness_stats(db, user_id)
+def illness_stats(user_id: int, window_days: int = 730, db: Session = Depends(get_db)):
+    return crud.get_illness_stats(db, user_id, window_days=window_days)
