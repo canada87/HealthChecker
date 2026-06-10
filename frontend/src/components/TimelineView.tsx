@@ -1,26 +1,41 @@
 import { useRef, useEffect, useState, useMemo } from 'react'
-import { addDays, addMonths, format, startOfDay } from 'date-fns'
+import {
+  addDays, addMonths, differenceInCalendarDays,
+  format, startOfDay,
+} from 'date-fns'
 import { it } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 import type { MedicationLog, IllnessEpisode } from '../types'
 
-const MIN_LANE_W = 56   // minimum column width before we stop adding parallel lanes
-const LABEL_W = 48      // width of the day label column (px)
-const LEVEL_COLORS = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444']
+const MIN_LANE_W = 56
+const LABEL_W = 48
 
-// Greedy interval coloring: assign each episode a lane index.
-// Episodes that would exceed `maxLanes` get no entry (hidden).
+// Illness column colour = illness.color + opacity based on intensity level.
+// This keeps each illness identifiable by its own colour while showing severity
+// through saturation (light = mild, solid = severe).
+const INTENSITY_ALPHA = ['4d', '75', '9e', 'c7', 'ff'] // intensity 1-5 → 30…100%
+
+function segColor(illColor: string, intensity: number | null): string {
+  if (intensity === null) return illColor + 'bf'
+  return illColor + INTENSITY_ALPHA[Math.min(4, Math.max(0, intensity - 1))]
+}
+
+// Parse a yyyy-MM-dd string into a local midnight Date (avoids UTC offset bugs)
+function parseLocalDate(val: string): Date {
+  const [y, m, d] = val.split('-').map(Number)
+  return startOfDay(new Date(y, m - 1, d))
+}
+
+// Greedy interval coloring: assign each episode a lane, capped at maxLanes.
 function assignLanes(eps: IllnessEpisode[], maxLanes: number): Map<number, number> {
   const sorted = [...eps].sort(
     (a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime()
   )
-  const laneEnds: number[] = [] // ms timestamp when each lane becomes free
+  const laneEnds: number[] = []
   const map = new Map<number, number>()
-
   for (const ep of sorted) {
     const s = new Date(ep.started_at).getTime()
     const e = ep.ended_at ? new Date(ep.ended_at).getTime() : Infinity
-
     let lane = -1
     for (let i = 0; i < laneEnds.length && i < maxLanes; i++) {
       if (laneEnds[i] <= s) { lane = i; laneEnds[i] = e; break }
@@ -41,8 +56,9 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
   const [cWidth, setCWidth] = useState(320)
   const [mode, setMode] = useState<'week' | 'month'>('week')
   const [winStart, setWinStart] = useState(() => startOfDay(addDays(new Date(), -6)))
+  const [customEnd, setCustomEnd] = useState<Date | null>(null)
+  const [showPicker, setShowPicker] = useState(false)
 
-  // Observe container width for dynamic lane calculation
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -52,13 +68,18 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
     return () => ro.disconnect()
   }, [])
 
-  const dayCount = mode === 'week' ? 7 : 30
-  const dayH = mode === 'week' ? 72 : 36
-  const winEnd = addDays(winStart, dayCount)
+  // Derived window parameters — custom range overrides the mode toggle
+  const standardDays = mode === 'week' ? 7 : 30
+  const winEnd = customEnd ? addDays(customEnd, 1) : addDays(winStart, standardDays)
+  const dayCount = customEnd
+    ? Math.max(1, differenceInCalendarDays(customEnd, winStart) + 1)
+    : standardDays
+  const dayH = customEnd
+    ? Math.max(20, Math.min(72, Math.floor(504 / dayCount)))
+    : mode === 'week' ? 72 : 36
   const totalH = dayCount * dayH
 
   const contentW = Math.max(1, cWidth - LABEL_W)
-  // How many parallel illness columns fit at minimum width
   const maxLanes = Math.max(1, Math.floor(contentW / MIN_LANE_W))
 
   const laneMap = useMemo(
@@ -66,10 +87,8 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
     [illEpisodes, maxLanes]
   )
 
-  // Episodes overlapping the current window, compacted to consecutive lane indices
   const visEps = useMemo(() => {
-    const ws = winStart.getTime()
-    const we = winEnd.getTime()
+    const ws = winStart.getTime(), we = winEnd.getTime()
     return illEpisodes
       .filter(ep => {
         if (!laneMap.has(ep.id)) return false
@@ -78,16 +97,14 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
         return s < we && e > ws
       })
       .sort((a, b) => laneMap.get(a.id)! - laneMap.get(b.id)!)
-      .map((ep, i) => ({ ep, lane: i }))   // compact: no empty lane gaps in this window
+      .map((ep, i) => ({ ep, lane: i })) // compact lanes for this window
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [illEpisodes, laneMap, winStart.getTime(), winEnd.getTime()])
 
-  // Column width adapts to how many illnesses are actually concurrent in this window
   const laneW = contentW / Math.max(1, visEps.length)
 
   const visMeds = useMemo(() => {
-    const ws = winStart.getTime()
-    const we = winEnd.getTime()
+    const ws = winStart.getTime(), we = winEnd.getTime()
     return medLogs.filter(l => {
       const t = new Date(l.taken_at).getTime()
       return t >= ws && t < we
@@ -95,21 +112,64 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [medLogs, winStart.getTime(), winEnd.getTime()])
 
-  // Y position (px) for a given Date within the window
   const yOf = (d: Date) => ((d.getTime() - winStart.getTime()) / 86400000) * dayH
-
   const today = new Date()
   const todayY = yOf(today)
 
-  // When switching modes, keep the window end fixed so context doesn't jump
-  const switchMode = (m: 'week' | 'month') => {
-    const currentEnd = addDays(winStart, dayCount)
-    setWinStart(addDays(currentEnd, -(m === 'week' ? 7 : 30)))
-    setMode(m)
+  // Navigation — in custom mode, shift both endpoints by the current range length
+  const prev = () => {
+    if (customEnd) {
+      const shift = dayCount
+      setWinStart(d => addDays(d, -shift))
+      setCustomEnd(prev => prev ? addDays(prev, -shift) : null)
+    } else {
+      setWinStart(d => mode === 'week' ? addDays(d, -7) : addMonths(d, -1))
+    }
+  }
+  const next = () => {
+    if (customEnd) {
+      const shift = dayCount
+      setWinStart(d => addDays(d, shift))
+      setCustomEnd(prev => prev ? addDays(prev, shift) : null)
+    } else {
+      setWinStart(d => mode === 'week' ? addDays(d, 7) : addMonths(d, 1))
+    }
   }
 
-  const prev = () => setWinStart(d => mode === 'week' ? addDays(d, -7) : addMonths(d, -1))
-  const next = () => setWinStart(d => mode === 'week' ? addDays(d, 7) : addMonths(d, 1))
+  // Keep the window end fixed when switching between week/month modes
+  const switchMode = (m: 'week' | 'month') => {
+    const end = customEnd ?? addDays(winStart, standardDays)
+    setWinStart(addDays(end, -(m === 'week' ? 7 : 30)))
+    setMode(m)
+    setCustomEnd(null)
+  }
+
+  // Jump to today in week view
+  const goToday = () => {
+    setMode('week')
+    setWinStart(startOfDay(addDays(new Date(), -6)))
+    setCustomEnd(null)
+  }
+
+  // Date picker handlers
+  const startStr = format(winStart, 'yyyy-MM-dd')
+  const endStr = format(customEnd ?? addDays(winEnd, -1), 'yyyy-MM-dd')
+
+  const handleStartChange = (val: string) => {
+    if (!val) return
+    const newStart = parseLocalDate(val)
+    const currentEnd = customEnd ?? addDays(winStart, standardDays - 1)
+    if (newStart >= currentEnd) return
+    setWinStart(newStart)
+    setCustomEnd(currentEnd)
+  }
+
+  const handleEndChange = (val: string) => {
+    if (!val) return
+    const newEnd = parseLocalDate(val)
+    if (newEnd <= winStart) return
+    setCustomEnd(newEnd)
+  }
 
   const legIll = [...new Map(visEps.map(({ ep }) => [ep.illness.id, ep.illness])).values()]
   const legMed = [...new Map(visMeds.map(l => [l.medication.id, l.medication])).values()]
@@ -117,37 +177,82 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
 
-      {/* Controls */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-        <div className="flex items-center gap-1">
-          <button onClick={prev} className="p-1.5 rounded-full hover:bg-slate-100 active:bg-slate-200 transition-colors">
-            <ChevronLeft size={18} className="text-slate-600" />
-          </button>
-          <span className="text-sm font-medium text-slate-700 w-[148px] text-center">
-            {format(winStart, 'd MMM', { locale: it })} – {format(addDays(winEnd, -1), 'd MMM yyyy', { locale: it })}
-          </span>
-          <button onClick={next} className="p-1.5 rounded-full hover:bg-slate-100 active:bg-slate-200 transition-colors">
-            <ChevronRight size={18} className="text-slate-600" />
-          </button>
-        </div>
-        <div className="flex bg-slate-100 rounded-lg p-0.5">
-          {(['week', 'month'] as const).map(m => (
-            <button key={m} onClick={() => switchMode(m)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                mode === m ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
-              }`}>
-              {m === 'week' ? '7g' : '30g'}
+      {/* ── Controls ─────────────────────────────────────────────────── */}
+      <div className="px-4 py-3 border-b border-slate-100 space-y-2">
+        <div className="flex items-center gap-2">
+
+          {/* Prev / date range display / Next */}
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <button onClick={prev}
+              className="p-1.5 rounded-full hover:bg-slate-100 active:bg-slate-200 transition-colors shrink-0">
+              <ChevronLeft size={18} className="text-slate-600" />
             </button>
-          ))}
+            <span className="text-sm font-medium text-slate-700 flex-1 text-center truncate">
+              {format(winStart, 'd MMM', { locale: it })} – {format(addDays(winEnd, -1), 'd MMM yyyy', { locale: it })}
+            </span>
+            <button onClick={next}
+              className="p-1.5 rounded-full hover:bg-slate-100 active:bg-slate-200 transition-colors shrink-0">
+              <ChevronRight size={18} className="text-slate-600" />
+            </button>
+          </div>
+
+          {/* Week / month toggle */}
+          <div className="flex bg-slate-100 rounded-lg p-0.5 shrink-0">
+            {(['week', 'month'] as const).map(m => (
+              <button key={m} onClick={() => switchMode(m)}
+                className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                  mode === m && !customEnd ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+                }`}>
+                {m === 'week' ? '7g' : '30g'}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom range toggle */}
+          <button
+            onClick={() => setShowPicker(p => !p)}
+            title="Seleziona periodo manuale"
+            className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+              showPicker || customEnd ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-500'
+            }`}>
+            <CalendarDays size={16} />
+          </button>
+
+          {/* Today */}
+          <button onClick={goToday}
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-indigo-600 hover:bg-indigo-50 active:bg-indigo-100 transition-colors shrink-0">
+            Oggi
+          </button>
         </div>
+
+        {/* Collapsible date pickers */}
+        {showPicker && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 shrink-0">Dal</span>
+            <input
+              type="date"
+              value={startStr}
+              max={endStr}
+              onChange={e => handleStartChange(e.target.value)}
+              className="flex-1 border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+            <span className="text-xs text-slate-500 shrink-0">al</span>
+            <input
+              type="date"
+              value={endStr}
+              min={startStr}
+              onChange={e => handleEndChange(e.target.value)}
+              className="flex-1 border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+          </div>
+        )}
       </div>
 
-      {/* Scrollable timeline body */}
+      {/* ── Timeline body ─────────────────────────────────────────────── */}
       <div className="overflow-y-auto" style={{ maxHeight: '68vh' }}>
-        {/* Outer div measured by ResizeObserver */}
         <div ref={containerRef} className="relative" style={{ height: totalH, overflow: 'hidden' }}>
 
-          {/* Day rows with labels */}
+          {/* Day row backgrounds + labels */}
           {Array.from({ length: dayCount }, (_, i) => {
             const day = addDays(winStart, i)
             const isToday = format(day, 'yyyyMMdd') === format(today, 'yyyyMMdd')
@@ -166,32 +271,31 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
             )
           })}
 
-          {/* Current time indicator */}
+          {/* Current-time dashed line */}
           {todayY >= 0 && todayY <= totalH && (
             <div className="absolute right-0 pointer-events-none z-20"
               style={{ top: Math.round(todayY), left: LABEL_W, borderTop: '2px dashed #818cf8' }} />
           )}
 
-          {/* Content area — overflow hidden clips episodes that bleed outside the window */}
+          {/* ── Content area (overflow:hidden clips columns outside the window) */}
           <div className="absolute inset-y-0" style={{ left: LABEL_W, width: contentW, overflow: 'hidden' }}>
 
             {/* Illness episode columns */}
             {visEps.map(({ ep, lane }) => {
               const epStart = new Date(ep.started_at)
               const epEnd = ep.ended_at ? new Date(ep.ended_at) : new Date()
-
               const rawTop = yOf(epStart)
               const rawBot = yOf(epEnd)
               const height = Math.max(4, rawBot - rawTop)
               const left = lane * laneW + 2
               const w = Math.max(4, laneW - 4)
 
-              // Flat top/bottom corners indicate the episode extends beyond the visible window
+              // Flat corners where the bar is clipped by the window boundary
               const aboveWin = rawTop < 0
               const belowWin = rawBot > totalH
               const br = `${aboveWin ? 2 : 8}px ${aboveWin ? 2 : 8}px ${belowWin ? 2 : 8}px ${belowWin ? 2 : 8}px`
 
-              // Build colour segments from intensity logs
+              // Segments: illness.color at varying opacity based on intensity
               const logs = [...ep.logs].sort(
                 (a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime()
               )
@@ -199,18 +303,18 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
               let segs: { color: string; pct: number }[] = []
 
               if (logs.length === 0) {
-                segs = [{ color: ep.illness.color, pct: 100 }]
+                segs = [{ color: ep.illness.color + 'bf', pct: 100 }]
               } else {
                 const prems = Math.max(0, new Date(logs[0].occurred_at).getTime() - epStart.getTime())
-                if (prems > 0) segs.push({ color: ep.illness.color + '88', pct: (prems / totalMs) * 100 })
+                if (prems > 0) {
+                  segs.push({ color: ep.illness.color + '66', pct: (prems / totalMs) * 100 })
+                }
                 for (let i = 0; i < logs.length; i++) {
                   const segEnd = i < logs.length - 1 ? new Date(logs[i + 1].occurred_at) : epEnd
                   const ms = Math.max(0, segEnd.getTime() - new Date(logs[i].occurred_at).getTime())
-                  const col = logs[i].intensity ? LEVEL_COLORS[logs[i].intensity! - 1] : ep.illness.color
-                  segs.push({ color: col, pct: (ms / totalMs) * 100 })
+                  segs.push({ color: segColor(ep.illness.color, logs[i].intensity), pct: (ms / totalMs) * 100 })
                 }
               }
-              // Normalise to exactly 100% (avoids floating-point gaps)
               const sum = segs.reduce((s, g) => s + g.pct, 0)
               if (sum > 0) segs = segs.map(g => ({ ...g, pct: g.pct / sum * 100 }))
 
@@ -248,7 +352,7 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
         </div>
       </div>
 
-      {/* Legend */}
+      {/* ── Legend ───────────────────────────────────────────────────── */}
       {(legIll.length > 0 || legMed.length > 0) && (
         <div className="px-4 py-2.5 border-t border-slate-100 flex flex-wrap gap-x-4 gap-y-1.5">
           {legIll.map(ill => (
