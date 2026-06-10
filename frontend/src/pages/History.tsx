@@ -3,6 +3,7 @@ import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import type { MedicationLog, IllnessLog, Medication, Illness, IllnessEpisode } from '../types'
 import CalendarView from '../components/CalendarView'
+import TimelineView from '../components/TimelineView'
 import LogPastModal from '../components/LogPastModal'
 import EditLogModal from '../components/EditLogModal'
 import EditEpisodeModal from '../components/EditEpisodeModal'
@@ -55,7 +56,7 @@ export default function History() {
   const [medications, setMedications] = useState<Medication[]>([])
   const [illnesses, setIllnesses] = useState<Illness[]>([])
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
-  const [tab, setTab] = useState<'cal' | 'list'>('cal')
+  const [tab, setTab] = useState<'timeline' | 'cal' | 'list'>('timeline')
   const [showModal, setShowModal] = useState(false)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [editEpisode, setEditEpisode] = useState<IllnessEpisode | null>(null)
@@ -126,16 +127,20 @@ export default function History() {
       <h1 className="text-2xl font-bold text-slate-800 mb-4">Storico</h1>
 
       <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
-        {(['cal', 'list'] as const).map(t => (
+        {(['timeline', 'cal', 'list'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
           >
-            {t === 'cal' ? 'Calendario' : 'Lista'}
+            {t === 'timeline' ? 'Timeline' : t === 'cal' ? 'Calendario' : 'Lista'}
           </button>
         ))}
       </div>
+
+      {tab === 'timeline' && (
+        <TimelineView medLogs={medLogs} illEpisodes={illEpisodes} />
+      )}
 
       {tab === 'cal' && (
         <>
