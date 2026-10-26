@@ -30,6 +30,16 @@ button:disabled {
   padding-top: env(safe-area-inset-top);
 }
 
+@page {
+  margin: 14mm;
+}
+
+@media print {
+  body {
+    background: white;
+  }
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

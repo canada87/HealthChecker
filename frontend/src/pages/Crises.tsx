@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { Zap, CalendarDays, StopCircle, Plus, Pencil, Check, X, List, TrendingDown, Repeat } from 'lucide-react'
+import { Zap, CalendarDays, StopCircle, Plus, Pencil, Check, X, List, TrendingDown, Repeat, FileText } from 'lucide-react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import { useToast } from '../contexts/ToastContext'
@@ -10,6 +10,7 @@ import { LEVELS } from '../levels'
 import { durationMinutes, formatDuration, formatElapsed } from '../crisis'
 import CrisisModal from '../components/CrisisModal'
 import CrisisTrend from '../components/CrisisTrend'
+import CrisisReportModal from '../components/CrisisReportModal'
 import DeleteButton from '../components/DeleteButton'
 
 type Tab = 'log' | 'trend' | 'changes'
@@ -159,6 +160,7 @@ export default function Crises() {
   const [addingChange, setAddingChange] = useState(false)
   const [editChange, setEditChange] = useState<HabitChange | null>(null)
   const [busy, setBusy] = useState(false)
+  const [showReport, setShowReport] = useState(false)
 
   const load = useCallback(async () => {
     if (!currentUser) return
@@ -219,7 +221,15 @@ export default function Crises() {
 
   return (
     <div className="px-4 pt-6 pb-4">
-      <h1 className="text-2xl font-bold text-slate-800 mb-4">Crisi</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-slate-800">Crisi</h1>
+        <button
+          onClick={() => setShowReport(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+        >
+          <FileText size={16} /> Report
+        </button>
+      </div>
 
       <div className="mb-5 lg:max-w-md">
         {active ? (
@@ -305,6 +315,8 @@ export default function Crises() {
           </div>
         </section>
       )}
+
+      {showReport && <CrisisReportModal onClose={() => setShowReport(false)} />}
 
       {editing !== undefined && (
         <CrisisModal

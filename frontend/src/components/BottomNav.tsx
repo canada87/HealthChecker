@@ -21,7 +21,7 @@ export default function BottomNav() {
   const items = useNavItems()
 
   return (
-    <nav className="bg-white border-t border-slate-200 safe-bottom lg:hidden">
+    <nav className="bg-white border-t border-slate-200 safe-bottom lg:hidden print:hidden">
       <div className="flex">
         {items.map(({ to, icon: Icon, label }) => (
           <NavLink

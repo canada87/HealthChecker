@@ -9,7 +9,7 @@ export default function Sidebar() {
   const items = useNavItems()
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-white border-r border-slate-200 px-3 py-5">
+    <aside className="hidden print:!hidden lg:flex flex-col w-60 shrink-0 bg-white border-r border-slate-200 px-3 py-5">
       <div className="flex items-center gap-2.5 px-3 mb-8">
         <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center">
           <HeartPulse className="text-white" size={20} />
