@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { addDays, addWeeks, differenceInCalendarDays, endOfDay, format, startOfDay, startOfWeek } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, Minus, Printer } from 'lucide-react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import type { Crisis, HabitChange } from '../types'
@@ -28,6 +28,87 @@ function parseDay(val: string | null, fallback: Date): Date {
 
 function avg(values: number[]): number | null {
   return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null
+}
+
+function crisesBetween(crises: Crisis[], from: Date, to: Date): Crisis[] {
+  return crises
+    .filter(c => c.ended_at)
+    .filter(c => { const t = new Date(c.started_at); return t >= from && t <= to })
+    .sort((a, b) => a.started_at.localeCompare(b.started_at))
+}
+
+interface Summary {
+  total: number
+  perWeek: number
+  avgIntensity: number | null
+  avgDuration: number | null
+  totalDuration: number
+}
+
+function summarize(crises: Crisis[], days: number): Summary {
+  const durations = crises.map(durationMinutes).filter((v): v is number => v != null)
+  return {
+    total: crises.length,
+    perWeek: crises.length / (days / 7),
+    avgIntensity: avg(crises.map(c => c.intensity).filter((v): v is number => v != null)),
+    avgDuration: avg(durations),
+    totalDuration: durations.reduce((a, b) => a + b, 0),
+  }
+}
+
+// Lower is better for every metric: fewer, milder, shorter crises.
+function Change({ before, after, format: fmt }: { before: number | null; after: number | null; format: (v: number) => string }) {
+  if (before === null || after === null) return <span className="text-slate-500">—</span>
+  const diff = after - before
+  if (Math.abs(diff) < 0.05) return <span className="inline-flex items-center gap-0.5 text-slate-500"><Minus size={12} aria-hidden="true" /> invariato</span>
+  const better = diff < 0
+  const Icon = better ? ArrowDown : ArrowUp
+  const pct = before ? ` (${diff > 0 ? '+' : '−'}${Math.round(Math.abs(diff / before) * 100)}%)` : ''
+  return (
+    <span className={`inline-flex items-center gap-0.5 font-semibold ${better ? 'text-green-700' : 'text-red-600'}`}>
+      <Icon size={12} aria-hidden="true" />
+      {fmt(Math.abs(diff))}{pct}
+      <span className="sr-only">{better ? ' (miglioramento)' : ' (peggioramento)'}</span>
+    </span>
+  )
+}
+
+function PreviousComparison({ current, previous, prevFrom, prevTo }: { current: Summary; previous: Summary; prevFrom: Date; prevTo: Date }) {
+  const one = (v: number) => v.toFixed(1)
+  const rows = [
+    { label: 'Crisi totali', b: String(previous.total), a: String(current.total), before: previous.total, after: current.total, fmt: (v: number) => String(Math.round(v)) },
+    { label: 'Crisi a settimana', b: one(previous.perWeek), a: one(current.perWeek), before: previous.perWeek, after: current.perWeek, fmt: one },
+    { label: 'Intensità media', b: previous.avgIntensity?.toFixed(1) ?? '—', a: current.avgIntensity?.toFixed(1) ?? '—', before: previous.avgIntensity, after: current.avgIntensity, fmt: one },
+    { label: 'Durata media', b: formatDuration(previous.avgDuration), a: formatDuration(current.avgDuration), before: previous.avgDuration, after: current.avgDuration, fmt: (v: number) => formatDuration(v) },
+    { label: 'Durata totale', b: formatDuration(previous.totalDuration), a: current.total ? formatDuration(current.totalDuration) : '—', before: previous.totalDuration, after: current.totalDuration, fmt: (v: number) => formatDuration(v) },
+  ]
+  return (
+    <Section title="Confronto con il periodo precedente">
+      <p className="text-xs text-slate-500 mb-2">
+        Periodo precedente: dal {format(prevFrom, 'd MMM yyyy', { locale: it })} al {format(prevTo, 'd MMM yyyy', { locale: it })}
+      </p>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-xs text-slate-500 border-b border-slate-200">
+            <th className="text-left font-medium py-1.5"></th>
+            <th className="text-right font-medium py-1.5">Precedente</th>
+            <th className="text-right font-medium py-1.5">Questo periodo</th>
+            <th className="text-right font-medium py-1.5">Variazione</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.label} className="border-b border-slate-100 last:border-0">
+              <td className="py-1.5 text-slate-700">{r.label}</td>
+              <td className="py-1.5 text-right tabular-nums text-slate-800">{r.b}</td>
+              <td className="py-1.5 text-right tabular-nums text-slate-800">{r.a}</td>
+              <td className="py-1.5 text-right text-xs"><Change before={r.before} after={r.after} format={r.fmt} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Section>
+  )
 }
 
 function Tile({ label, value }: { label: string; value: string }) {
@@ -153,23 +234,20 @@ export default function CrisisReport() {
     })
   }, [currentUser])
 
-  const inRange = useMemo(
-    () => (crises ?? [])
-      .filter(c => c.ended_at)
-      .filter(c => { const t = new Date(c.started_at); return t >= from && t <= to })
-      .sort((a, b) => a.started_at.localeCompare(b.started_at)),
-    [crises, from.getTime(), to.getTime()],
-  )
+  const days = differenceInCalendarDays(to, from) + 1
+  // Previous period of the same length, ending the day before `from`
+  const prevFrom = startOfDay(addDays(from, -days))
+  const prevTo = endOfDay(addDays(from, -1))
+
+  const inRange = useMemo(() => crisesBetween(crises ?? [], from, to), [crises, from.getTime(), to.getTime()])
+  const inPrev = useMemo(() => crisesBetween(crises ?? [], prevFrom, prevTo), [crises, prevFrom.getTime(), prevTo.getTime()])
   const changesInRange = changes
     .filter(c => { const t = new Date(c.started_at); return t >= from && t <= to })
     .sort((a, b) => a.started_at.localeCompare(b.started_at))
 
-  const days = differenceInCalendarDays(to, from) + 1
-  const total = inRange.length
-  const durations = inRange.map(durationMinutes).filter((v): v is number => v != null)
-  const intensities = inRange.map(c => c.intensity).filter((v): v is number => v != null)
-  const avgIntensity = avg(intensities)
-  const totalDuration = durations.reduce((a, b) => a + b, 0)
+  const current = summarize(inRange, days)
+  const previous = summarize(inPrev, days)
+  const { total, avgIntensity, totalDuration } = current
 
   const byCategory = useMemo(() => {
     const map = new Map<string, { label: ReactNode; items: Crisis[] }>()
@@ -215,12 +293,16 @@ export default function CrisisReport() {
           <Section title="Riepilogo">
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               <Tile label="Crisi totali" value={String(total)} />
-              <Tile label="Crisi a settimana" value={(total / (days / 7)).toFixed(1)} />
+              <Tile label="Crisi a settimana" value={current.perWeek.toFixed(1)} />
               <Tile label="Intensità media" value={avgIntensity !== null ? `${avgIntensity.toFixed(1)} / 5` : '—'} />
-              <Tile label="Durata media" value={formatDuration(avg(durations))} />
+              <Tile label="Durata media" value={formatDuration(current.avgDuration)} />
               <Tile label="Durata totale" value={total ? formatDuration(totalDuration) : '—'} />
             </div>
           </Section>
+
+          {previous.total > 0 && (
+            <PreviousComparison current={current} previous={previous} prevFrom={prevFrom} prevTo={prevTo} />
+          )}
 
           {total > 0 && (
             <>
