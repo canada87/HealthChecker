@@ -152,3 +152,80 @@ class StatItem(BaseModel):
     @field_serializer('last_at')
     def serialize_last_at(self, v: Optional[datetime]) -> Optional[str]:
         return _utc_iso(v) if v else None
+
+# --- Crises ---
+
+class CrisisCategoryCreate(BaseModel):
+    name: str
+    color: str = "#F44336"
+    emoji: str = "⚡"
+
+class CrisisCategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+    emoji: Optional[str] = None
+
+class CrisisCategoryOut(BaseModel):
+    id: int
+    user_id: int
+    name: str
+    color: str
+    emoji: str
+    model_config = {"from_attributes": True}
+
+class CrisisCreate(BaseModel):
+    category_id: Optional[int] = None
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+    intensity: Optional[int] = None
+    description: Optional[str] = None
+    trigger: Optional[str] = None
+    what_helped: Optional[str] = None
+
+# Every field is sent explicitly by the client, so nulls clear values.
+class CrisisUpdate(BaseModel):
+    category_id: Optional[int] = None
+    started_at: datetime
+    ended_at: Optional[datetime] = None
+    intensity: Optional[int] = None
+    description: Optional[str] = None
+    trigger: Optional[str] = None
+    what_helped: Optional[str] = None
+
+class CrisisOut(BaseModel):
+    id: int
+    user_id: int
+    category_id: Optional[int]
+    started_at: datetime
+    ended_at: Optional[datetime]
+    intensity: Optional[int]
+    description: Optional[str]
+    trigger: Optional[str]
+    what_helped: Optional[str]
+    category: Optional[CrisisCategoryOut]
+    model_config = {"from_attributes": True}
+
+    @field_serializer('started_at')
+    def serialize_started_at(self, v: datetime) -> str:
+        return _utc_iso(v)
+
+    @field_serializer('ended_at')
+    def serialize_ended_at(self, v: Optional[datetime]) -> Optional[str]:
+        return _utc_iso(v) if v else None
+
+class HabitChangeCreate(BaseModel):
+    started_at: datetime
+    title: str
+    description: Optional[str] = None
+
+class HabitChangeOut(BaseModel):
+    id: int
+    user_id: int
+    started_at: datetime
+    title: str
+    description: Optional[str]
+    model_config = {"from_attributes": True}
+
+    @field_serializer('started_at')
+    def serialize_started_at(self, v: datetime) -> str:
+        return _utc_iso(v)

@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Calendar, BarChart2, Settings, Shield } from 'lucide-react'
+import { Home, Zap, Calendar, BarChart2, Settings, Shield } from 'lucide-react'
 import { useUser } from '../contexts/UserContext'
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
+  { to: '/crises', icon: Zap, label: 'Crisi' },
   { to: '/history', icon: Calendar, label: 'Storico' },
   { to: '/stats', icon: BarChart2, label: 'Statistiche' },
   { to: '/settings', icon: Settings, label: 'Impostazioni' },

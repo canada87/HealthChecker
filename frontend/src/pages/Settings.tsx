@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
-import type { Medication, Illness } from '../types'
-import { Plus, Pencil, X, Check, Pill, Thermometer, BarChart2 } from 'lucide-react'
+import type { Medication, Illness, CrisisCategory } from '../types'
+import { Plus, Pencil, X, Check, Pill, Thermometer, BarChart2, Zap } from 'lucide-react'
 import DeleteButton from '../components/DeleteButton'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
@@ -15,11 +15,13 @@ const DEFAULT_WINDOW_YEARS = 2
 
 const EMOJIS_MED = ['💊', '💉', '🩺', '🧴', '🩹', '🔴', '🟠', '⚪']
 const EMOJIS_ILL = ['🤒', '🤧', '😷', '🤮', '🤕', '🫁', '🦠', '🤢']
+const EMOJIS_CRISIS = ['😡', '🙅', '😢', '🌀', '😴', '📚', '😱', '⚡']
 const COLORS = ['#4CAF50', '#2196F3', '#9C27B0', '#FF9800', '#F44336', '#00BCD4', '#795548', '#607D8B']
 
 interface FormState { name: string; color: string; emoji: string }
 const defaultMedForm: FormState = { name: '', color: '#4CAF50', emoji: '💊' }
 const defaultIllForm: FormState = { name: '', color: '#FF5722', emoji: '🤒' }
+const defaultCrisisForm: FormState = { name: '', color: '#F44336', emoji: '⚡' }
 
 function ItemForm({ form, setForm, onSave, onCancel, emojis }: {
   form: FormState; setForm: (f: FormState) => void
@@ -78,6 +80,10 @@ export default function Settings() {
   const [editIll, setEditIll] = useState<Illness | null>(null)
   const [medForm, setMedForm] = useState<FormState>(defaultMedForm)
   const [illForm, setIllForm] = useState<FormState>(defaultIllForm)
+  const [crisisCats, setCrisisCats] = useState<CrisisCategory[]>([])
+  const [addingCat, setAddingCat] = useState(false)
+  const [editCat, setEditCat] = useState<CrisisCategory | null>(null)
+  const [catForm, setCatForm] = useState<FormState>(defaultCrisisForm)
   const [freqWindowYears, setFreqWindowYears] = useState<number>(() => {
     const stored = localStorage.getItem(FREQ_WINDOW_KEY)
     return stored ? parseFloat(stored) : DEFAULT_WINDOW_YEARS
@@ -85,12 +91,14 @@ export default function Settings() {
 
   const load = useCallback(async () => {
     if (!currentUser) return
-    const [meds, ills] = await Promise.all([
+    const [meds, ills, cats] = await Promise.all([
       api.getMedications(currentUser.id),
       api.getIllnesses(currentUser.id),
+      api.getCrisisCategories(currentUser.id),
     ])
     setMedications(meds)
     setIllnesses(ills)
+    setCrisisCats(cats)
   }, [currentUser])
 
   useEffect(() => { load() }, [load])
@@ -118,6 +126,19 @@ export default function Settings() {
       setAddingIll(false)
     }
     setIllForm(defaultIllForm)
+    load()
+  }
+
+  const saveCat = async () => {
+    if (!currentUser || !catForm.name.trim()) return
+    if (editCat) {
+      await api.updateCrisisCategory(editCat.id, catForm)
+      setEditCat(null)
+    } else {
+      await api.createCrisisCategory(currentUser.id, catForm)
+      setAddingCat(false)
+    }
+    setCatForm(defaultCrisisForm)
     load()
   }
 
@@ -230,6 +251,44 @@ export default function Settings() {
               <button onClick={() => { setEditIll(ill); setIllForm({ name: ill.name, color: ill.color, emoji: ill.emoji }); setAddingIll(false) }}
                 className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
               <DeleteButton onConfirm={async () => { await api.deleteIllness(ill.id); load() }} size={16} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-6 lg:mt-0">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-700"><Zap size={20} className="text-indigo-500" aria-hidden="true" /> Categorie crisi</h2>
+          {!addingCat && !editCat && (
+            <button onClick={() => { setAddingCat(true); setCatForm(defaultCrisisForm) }}
+              className="flex items-center gap-1 text-sm text-indigo-600 font-medium">
+              <Plus size={18} /> Aggiungi
+            </button>
+          )}
+        </div>
+
+        {(addingCat || editCat) && (
+          <div className="mb-3">
+            <ItemForm
+              form={catForm} setForm={setCatForm}
+              onSave={saveCat}
+              onCancel={() => { setAddingCat(false); setEditCat(null); setCatForm(defaultCrisisForm) }}
+              emojis={EMOJIS_CRISIS}
+            />
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {crisisCats.map(cat => (
+            <div key={cat.id} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                style={{ backgroundColor: cat.color + '20' }}>
+                {cat.emoji}
+              </div>
+              <span className="flex-1 font-medium text-slate-700">{cat.name}</span>
+              <button onClick={() => { setEditCat(cat); setCatForm({ name: cat.name, color: cat.color, emoji: cat.emoji }); setAddingCat(false) }}
+                className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
+              <DeleteButton onConfirm={async () => { await api.deleteCrisisCategory(cat.id); load() }} size={16} />
             </div>
           ))}
         </div>

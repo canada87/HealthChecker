@@ -66,3 +66,32 @@ export interface StatItem {
   count_total: number
   avg_frequency_days: number | null
 }
+
+export interface CrisisCategory {
+  id: number
+  user_id: number
+  name: string
+  color: string
+  emoji: string
+}
+
+export interface Crisis {
+  id: number
+  user_id: number
+  category_id: number | null
+  started_at: string
+  ended_at: string | null
+  intensity: number | null
+  description: string | null
+  trigger: string | null
+  what_helped: string | null
+  category: CrisisCategory | null
+}
+
+export interface HabitChange {
+  id: number
+  user_id: number
+  started_at: string
+  title: string
+  description: string | null
+}

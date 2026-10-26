@@ -16,7 +16,7 @@ def get_db():
         db.close()
 
 def create_tables():
-    from models import User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode
+    from models import User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode, CrisisCategory, Crisis, HabitChange
     Base.metadata.create_all(bind=engine)
     _migrate_illness_tables()
     _seed_data()
@@ -45,5 +45,18 @@ def _seed_data():
             ill = Illness(user_id=admin.id, name="Tosse", color="#FF5722", emoji="🤒")
             db.add_all([med, ill])
             db.commit()
+        _seed_crisis_categories(db)
     finally:
         db.close()
+
+def _seed_crisis_categories(db):
+    # Users created before the crisis feature get the default categories once
+    from models import User, CrisisCategory, Crisis
+    from crud import seed_crisis_categories
+    for user in db.query(User).all():
+        has_any = (
+            db.query(CrisisCategory).filter(CrisisCategory.user_id == user.id).count()
+            or db.query(Crisis).filter(Crisis.user_id == user.id).count()
+        )
+        if not has_any:
+            seed_crisis_categories(db, user.id)

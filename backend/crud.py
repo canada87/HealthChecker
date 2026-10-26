@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
-from models import User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode
-from schemas import UserCreate, UserUpdate, MedicationCreate, MedicationUpdate, IllnessCreate, IllnessUpdate
+from models import User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode, CrisisCategory, Crisis, HabitChange
+from schemas import (
+    UserCreate, UserUpdate, MedicationCreate, MedicationUpdate, IllnessCreate, IllnessUpdate,
+    CrisisCategoryCreate, CrisisCategoryUpdate, CrisisCreate, CrisisUpdate, HabitChangeCreate,
+)
 
 def get_users(db: Session):
     return db.query(User).order_by(User.name).all()
@@ -15,6 +18,7 @@ def create_user(db: Session, data: UserCreate):
     db.add(user)
     db.commit()
     db.refresh(user)
+    seed_crisis_categories(db, user.id)
     return user
 
 def update_user(db: Session, user_id: int, data: UserUpdate):
@@ -361,3 +365,115 @@ def get_illness_stats(db: Session, user_id: int, window_days: int = 730):
             "avg_frequency_days": avg_freq,
         })
     return result
+
+# --- Crises ---
+
+DEFAULT_CRISIS_CATEGORIES = [
+    ("Rabbia / esplosione", "#F44336", "😡"),
+    ("Oppositività", "#FF9800", "🙅"),
+    ("Ansia / pianto", "#2196F3", "😢"),
+    ("Iperattività / agitazione", "#9C27B0", "🌀"),
+    ("Sonno", "#607D8B", "😴"),
+    ("Scuola / compiti", "#795548", "📚"),
+]
+
+def seed_crisis_categories(db: Session, user_id: int):
+    db.add_all([
+        CrisisCategory(user_id=user_id, name=n, color=c, emoji=e)
+        for n, c, e in DEFAULT_CRISIS_CATEGORIES
+    ])
+    db.commit()
+
+def get_crisis_categories(db: Session, user_id: int):
+    return db.query(CrisisCategory).filter(CrisisCategory.user_id == user_id).order_by(CrisisCategory.id).all()
+
+def create_crisis_category(db: Session, user_id: int, data: CrisisCategoryCreate):
+    cat = CrisisCategory(user_id=user_id, **data.model_dump())
+    db.add(cat)
+    db.commit()
+    db.refresh(cat)
+    return cat
+
+def update_crisis_category(db: Session, cat_id: int, data: CrisisCategoryUpdate):
+    cat = db.query(CrisisCategory).filter(CrisisCategory.id == cat_id).first()
+    if not cat:
+        return None
+    for k, v in data.model_dump(exclude_none=True).items():
+        setattr(cat, k, v)
+    db.commit()
+    db.refresh(cat)
+    return cat
+
+def delete_crisis_category(db: Session, cat_id: int):
+    cat = db.query(CrisisCategory).filter(CrisisCategory.id == cat_id).first()
+    if cat:
+        # SQLite only honours ON DELETE SET NULL with foreign keys enabled, so do it by hand
+        db.query(Crisis).filter(Crisis.category_id == cat_id).update({Crisis.category_id: None})
+        db.delete(cat)
+        db.commit()
+    return cat
+
+def get_crises(db: Session, user_id: int):
+    return db.query(Crisis).filter(Crisis.user_id == user_id).order_by(Crisis.started_at.desc()).all()
+
+def create_crisis(db: Session, user_id: int, data: CrisisCreate):
+    fields = data.model_dump()
+    fields["started_at"] = fields["started_at"] or datetime.utcnow()
+    crisis = Crisis(user_id=user_id, **fields)
+    db.add(crisis)
+    db.commit()
+    db.refresh(crisis)
+    return crisis
+
+def update_crisis(db: Session, crisis_id: int, data: CrisisUpdate):
+    crisis = db.query(Crisis).filter(Crisis.id == crisis_id).first()
+    if not crisis:
+        return None
+    for k, v in data.model_dump().items():
+        setattr(crisis, k, v)
+    db.commit()
+    db.refresh(crisis)
+    return crisis
+
+def end_crisis(db: Session, crisis_id: int, ended_at: datetime = None):
+    crisis = db.query(Crisis).filter(Crisis.id == crisis_id).first()
+    if not crisis:
+        return None
+    crisis.ended_at = ended_at or datetime.utcnow()
+    db.commit()
+    db.refresh(crisis)
+    return crisis
+
+def delete_crisis(db: Session, crisis_id: int):
+    crisis = db.query(Crisis).filter(Crisis.id == crisis_id).first()
+    if crisis:
+        db.delete(crisis)
+        db.commit()
+    return crisis
+
+def get_habit_changes(db: Session, user_id: int):
+    return db.query(HabitChange).filter(HabitChange.user_id == user_id).order_by(HabitChange.started_at.desc()).all()
+
+def create_habit_change(db: Session, user_id: int, data: HabitChangeCreate):
+    change = HabitChange(user_id=user_id, **data.model_dump())
+    db.add(change)
+    db.commit()
+    db.refresh(change)
+    return change
+
+def update_habit_change(db: Session, change_id: int, data: HabitChangeCreate):
+    change = db.query(HabitChange).filter(HabitChange.id == change_id).first()
+    if not change:
+        return None
+    for k, v in data.model_dump().items():
+        setattr(change, k, v)
+    db.commit()
+    db.refresh(change)
+    return change
+
+def delete_habit_change(db: Session, change_id: int):
+    change = db.query(HabitChange).filter(HabitChange.id == change_id).first()
+    if change:
+        db.delete(change)
+        db.commit()
+    return change

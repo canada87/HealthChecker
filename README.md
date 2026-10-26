@@ -6,6 +6,8 @@ A PWA health tracker for logging medications and illnesses with a single tap.
 
 - Multi-user support (no passwords — pick your profile at startup)
 - One-tap logging for medications and illnesses
+- Crisis tracking (e.g. ADHD): one-tap timer or past entry with intensity, duration, category, description, trigger and what helped
+- Habit-change markers with a weekly trend chart and before/after comparison
 - Calendar view with colored event dots
 - Statistics (7-day, 30-day, all-time counts)
 - PWA installable on mobile devices

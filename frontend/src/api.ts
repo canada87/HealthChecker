@@ -1,4 +1,20 @@
-import type { User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode, StatItem } from './types'
+import type { User, Medication, Illness, MedicationLog, IllnessLog, IllnessEpisode, StatItem, CrisisCategory, Crisis, HabitChange } from './types'
+
+export interface CrisisInput {
+  category_id: number | null
+  started_at: string
+  ended_at: string | null
+  intensity: number | null
+  description: string | null
+  trigger: string | null
+  what_helped: string | null
+}
+
+export interface HabitChangeInput {
+  started_at: string
+  title: string
+  description: string | null
+}
 
 const BASE = '/api'
 
@@ -74,4 +90,30 @@ export const api = {
     req<StatItem[]>(`/users/${userId}/stats/medications${windowDays ? `?window_days=${windowDays}` : ''}`),
   getIllnessStats: (userId: number, windowDays?: number) =>
     req<StatItem[]>(`/users/${userId}/stats/illnesses${windowDays ? `?window_days=${windowDays}` : ''}`),
+
+  // Crisis API
+  getCrisisCategories: (userId: number) => req<CrisisCategory[]>(`/users/${userId}/crisis-categories`),
+  createCrisisCategory: (userId: number, data: { name: string; color: string; emoji: string }) =>
+    req<CrisisCategory>(`/users/${userId}/crisis-categories`, { method: 'POST', body: JSON.stringify(data) }),
+  updateCrisisCategory: (id: number, data: Partial<CrisisCategory>) =>
+    req<CrisisCategory>(`/crisis-categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCrisisCategory: (id: number) => req<void>(`/crisis-categories/${id}`, { method: 'DELETE' }),
+
+  getCrises: (userId: number) => req<Crisis[]>(`/users/${userId}/crises`),
+  startCrisis: (userId: number) =>
+    req<Crisis>(`/users/${userId}/crises`, { method: 'POST', body: JSON.stringify({}) }),
+  createCrisis: (userId: number, data: CrisisInput) =>
+    req<Crisis>(`/users/${userId}/crises`, { method: 'POST', body: JSON.stringify(data) }),
+  updateCrisis: (id: number, data: CrisisInput) =>
+    req<Crisis>(`/crises/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  endCrisis: (id: number) =>
+    req<Crisis>(`/crises/${id}/end`, { method: 'PATCH', body: JSON.stringify({ ended_at: null }) }),
+  deleteCrisis: (id: number) => req<void>(`/crises/${id}`, { method: 'DELETE' }),
+
+  getHabitChanges: (userId: number) => req<HabitChange[]>(`/users/${userId}/habit-changes`),
+  createHabitChange: (userId: number, data: HabitChangeInput) =>
+    req<HabitChange>(`/users/${userId}/habit-changes`, { method: 'POST', body: JSON.stringify(data) }),
+  updateHabitChange: (id: number, data: HabitChangeInput) =>
+    req<HabitChange>(`/habit-changes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteHabitChange: (id: number) => req<void>(`/habit-changes/${id}`, { method: 'DELETE' }),
 }

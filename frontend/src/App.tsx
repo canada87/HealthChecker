@@ -3,6 +3,7 @@ import { UserProvider, useUser } from './contexts/UserContext'
 import { ToastProvider } from './contexts/ToastContext'
 import SelectUser from './pages/SelectUser'
 import Home from './pages/Home'
+import Crises from './pages/Crises'
 import History from './pages/History'
 import Stats from './pages/Stats'
 import Settings from './pages/Settings'
@@ -23,6 +24,7 @@ function AppRoutes() {
           <div className="lg:max-w-6xl lg:mx-auto lg:px-6">
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/crises" element={<Crises />} />
               <Route path="/history" element={<History />} />
               <Route path="/stats" element={<Stats />} />
               <Route path="/settings" element={<Settings />} />

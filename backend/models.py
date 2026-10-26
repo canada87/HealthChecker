@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -10,6 +10,9 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     medications = relationship("Medication", back_populates="user", cascade="all, delete")
     illnesses = relationship("Illness", back_populates="user", cascade="all, delete")
+    crisis_categories = relationship("CrisisCategory", cascade="all, delete")
+    crises = relationship("Crisis", cascade="all, delete")
+    habit_changes = relationship("HabitChange", cascade="all, delete")
 
 class Medication(Base):
     __tablename__ = "medications"
@@ -67,3 +70,36 @@ class IllnessLog(Base):
     notes = Column(String, nullable=True)
     illness = relationship("Illness", back_populates="logs")
     episode = relationship("IllnessEpisode", back_populates="logs", foreign_keys=[episode_id])
+
+# --- Behavioural crises (e.g. ADHD) ---
+
+class CrisisCategory(Base):
+    __tablename__ = "crisis_categories"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    color = Column(String, default="#F44336")
+    emoji = Column(String, default="⚡")
+
+class Crisis(Base):
+    __tablename__ = "crises"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(Integer, ForeignKey("crisis_categories.id", ondelete="SET NULL"), nullable=True)
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    # Null while the crisis is still in progress (timer running)
+    ended_at = Column(DateTime, nullable=True)
+    intensity = Column(Integer, nullable=True)
+    description = Column(Text, nullable=True)
+    trigger = Column(Text, nullable=True)
+    what_helped = Column(Text, nullable=True)
+    category = relationship("CrisisCategory")
+
+# A change in habits/routine, used as a marker to compare crises before and after.
+class HabitChange(Base):
+    __tablename__ = "habit_changes"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    started_at = Column(DateTime, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
