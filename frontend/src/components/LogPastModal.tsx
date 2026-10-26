@@ -2,16 +2,9 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { api } from '../api'
 import type { Medication, Illness } from '../types'
-import { X } from 'lucide-react'
+import { LEVELS } from '../levels'
+import { X, Pill, Thermometer } from 'lucide-react'
 import useEscapeKey from './useEscapeKey'
-
-const LEVELS = [
-  { value: 1, label: 'Lieve', color: '#22c55e' },
-  { value: 2, label: 'Moderata', color: '#84cc16' },
-  { value: 3, label: 'Forte', color: '#eab308' },
-  { value: 4, label: 'Molto forte', color: '#f97316' },
-  { value: 5, label: 'Severa', color: '#ef4444' },
-]
 
 interface Props {
   medications: Medication[]
@@ -61,7 +54,7 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-800">Registra nel passato</h2>
-          <button onClick={onClose} aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
+          <button onClick={onClose} aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-500 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
             <X size={20} />
           </button>
         </div>
@@ -91,15 +84,15 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
         <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
           <button
             onClick={() => setTab('med')}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'med' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'med' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
           >
-            💊 Farmaci
+            <Pill size={16} aria-hidden="true" /> Farmaci
           </button>
           <button
             onClick={() => setTab('ill')}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'ill' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'ill' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
           >
-            🤒 Malattie
+            <Thermometer size={16} aria-hidden="true" /> Malattie
           </button>
         </div>
 
@@ -117,10 +110,10 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
                     backgroundColor: illIntensity === l.value ? l.color + '18' : 'white',
                   }}
                 >
-                  <span className="text-base font-bold" style={{ color: illIntensity === l.value ? l.color : '#94a3b8' }}>
+                  <span className="text-base font-bold" style={{ color: illIntensity === l.value ? l.color : '#64748b' }}>
                     {l.value}
                   </span>
-                  <span className="text-[10px] font-medium text-slate-500 leading-tight text-center">{l.label}</span>
+                  <span className="text-xs font-medium text-slate-500 leading-tight text-center">{l.label}</span>
                 </button>
               ))}
             </div>
@@ -145,13 +138,13 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
             </button>
           ))}
           {items.length === 0 && (
-            <p className="col-span-2 text-center text-slate-400 text-sm py-4">
+            <p className="col-span-2 text-center text-slate-500 text-sm py-4">
               Nessun elemento. Aggiungine nelle impostazioni.
             </p>
           )}
         </div>
         {tab === 'ill' && !illIntensity && items.length > 0 && (
-          <p className="text-xs text-slate-400 text-center mt-2">Seleziona un'intensità per continuare</p>
+          <p className="text-xs text-slate-500 text-center mt-2">Seleziona un'intensità per continuare</p>
         )}
       </div>
     </div>

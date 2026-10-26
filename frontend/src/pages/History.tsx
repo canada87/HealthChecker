@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import type { MedicationLog, IllnessLog, Medication, Illness, IllnessEpisode } from '../types'
+import { LEVEL_COLORS, LEVEL_LABELS } from '../levels'
 import CalendarView from '../components/CalendarView'
 import TimelineView from '../components/TimelineView'
 import LogPastModal from '../components/LogPastModal'
@@ -12,9 +13,6 @@ import { format, isSameDay } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { Plus, Pencil, Clock } from 'lucide-react'
 import DeleteButton from '../components/DeleteButton'
-
-const LEVEL_COLORS = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444']
-const LEVEL_LABELS = ['Lieve', 'Moderata', 'Forte', 'Molto forte', 'Severa']
 
 interface EditTarget {
   logId: number
@@ -32,13 +30,13 @@ function IntensityDots({ intensity }: { intensity: number }) {
       {[1, 2, 3, 4, 5].map(i => (
         <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: i <= intensity ? color : '#e2e8f0' }} />
       ))}
-      <span className="text-xs ml-1" style={{ color }}>{LEVEL_LABELS[intensity - 1]}</span>
+      <span className="text-xs ml-1 text-slate-600">{LEVEL_LABELS[intensity - 1]}</span>
     </div>
   )
 }
 
 function EpisodeDuration({ started_at, ended_at }: { started_at: string; ended_at: string | null }) {
-  if (!ended_at) return <span className="text-xs font-medium text-amber-500">In corso</span>
+  if (!ended_at) return <span className="text-xs font-medium text-amber-700">In corso</span>
   const ms = new Date(ended_at).getTime() - new Date(started_at).getTime()
   const mins = Math.floor(ms / 60000)
   const hrs = Math.floor(mins / 60)
@@ -47,7 +45,7 @@ function EpisodeDuration({ started_at, ended_at }: { started_at: string; ended_a
   if (days > 0) text = `${days}g ${hrs % 24}h`
   else if (hrs > 0) text = `${hrs}h ${mins % 60}m`
   else text = `${mins > 0 ? mins + 'm' : '< 1m'}`
-  return <span className="text-xs text-slate-400">{text}</span>
+  return <span className="text-xs text-slate-500">{text}</span>
 }
 
 export default function History() {
@@ -180,11 +178,11 @@ export default function History() {
                     <span>{l.medication.emoji}</span>
                     <div>
                       <div className="text-sm font-medium text-slate-700">{l.medication.name}</div>
-                      <div className="text-xs text-slate-400">{format(new Date(l.taken_at), 'HH:mm')}</div>
+                      <div className="text-xs text-slate-500">{format(new Date(l.taken_at), 'HH:mm')}</div>
                     </div>
                   </div>
                   <div className="flex">
-                    <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                    <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
                     <DeleteButton onConfirm={() => deleteML(l.id)} />
                   </div>
                 </div>
@@ -197,11 +195,11 @@ export default function History() {
                     <span>{l.illness.emoji}</span>
                     <div>
                       <div className="text-sm font-medium text-slate-700">{l.illness.name}</div>
-                      <div className="text-xs text-slate-400">{format(new Date(l.occurred_at), 'HH:mm')}</div>
+                      <div className="text-xs text-slate-500">{format(new Date(l.occurred_at), 'HH:mm')}</div>
                     </div>
                   </div>
                   <div className="flex">
-                    <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                    <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
                     <DeleteButton onConfirm={() => deleteIL(l.id)} />
                   </div>
                 </div>
@@ -215,13 +213,13 @@ export default function History() {
                     <div>
                       <div className="text-sm font-medium text-slate-700">{ep.illness.name}</div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-slate-400">Inizio {format(new Date(ep.started_at), 'HH:mm')}</span>
+                        <span className="text-xs text-slate-500">Inizio {format(new Date(ep.started_at), 'HH:mm')}</span>
                         {ep.logs[0]?.intensity && <IntensityDots intensity={ep.logs[0].intensity} />}
                       </div>
                     </div>
                   </div>
                   <div className="flex">
-                    <button onClick={() => setEditEpisode(ep)} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                    <button onClick={() => setEditEpisode(ep)} className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
                     <DeleteButton onConfirm={() => deleteEp(ep.id)} />
                   </div>
                 </div>
@@ -236,7 +234,7 @@ export default function History() {
                       <span>{ep.illness.emoji}</span>
                       <div>
                         <div className="text-sm font-medium text-slate-700">{ep.illness.name}</div>
-                        <div className="text-xs text-slate-400">Fine {format(new Date(ep.ended_at!), 'HH:mm')}</div>
+                        <div className="text-xs text-slate-500">Fine {format(new Date(ep.ended_at!), 'HH:mm')}</div>
                       </div>
                     </div>
                     <Clock size={15} className="text-slate-300 mr-2" />
@@ -244,7 +242,7 @@ export default function History() {
                 ))}
 
               {dayMedLogs.length === 0 && dayIllLogs.length === 0 && dayEpStarts.length === 0 && dayEpEnds.filter(ep => !isSameDay(new Date(ep.started_at), selectedDay)).length === 0 && (
-                <p className="text-sm text-slate-400 text-center py-2">Nessuna registrazione</p>
+                <p className="text-sm text-slate-500 text-center py-2">Nessuna registrazione</p>
               )}
             </div>
           )}
@@ -304,11 +302,11 @@ export default function History() {
                       </div>
                       <div>
                         <div className="text-sm font-medium text-slate-700">{l.medication.name}</div>
-                        <div className="text-xs text-slate-400 capitalize">{format(new Date(l.taken_at), 'd MMM, HH:mm', { locale: it })}</div>
+                        <div className="text-xs text-slate-500 capitalize">{format(new Date(l.taken_at), 'd MMM, HH:mm', { locale: it })}</div>
                       </div>
                     </div>
                     <div className="flex">
-                      <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                      <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
                       <DeleteButton onConfirm={() => deleteML(l.id)} />
                     </div>
                   </div>
@@ -325,11 +323,11 @@ export default function History() {
                       </div>
                       <div>
                         <div className="text-sm font-medium text-slate-700">{l.illness.name}</div>
-                        <div className="text-xs text-slate-400 capitalize">{format(new Date(l.occurred_at), 'd MMM, HH:mm', { locale: it })}</div>
+                        <div className="text-xs text-slate-500 capitalize">{format(new Date(l.occurred_at), 'd MMM, HH:mm', { locale: it })}</div>
                       </div>
                     </div>
                     <div className="flex">
-                      <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                      <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
                       <DeleteButton onConfirm={() => deleteIL(l.id)} />
                     </div>
                   </div>
@@ -351,19 +349,19 @@ export default function History() {
                         <div>
                           <div className="text-sm font-medium text-slate-700">{ep.illness.name}</div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-500">
                               {format(new Date(ep.started_at), 'd MMM, HH:mm', { locale: it })}
                             </span>
                             <span className="text-slate-300">→</span>
                             {ep.ended_at
-                              ? <span className="text-xs text-slate-400">{format(new Date(ep.ended_at), 'd MMM, HH:mm', { locale: it })}</span>
-                              : <span className="text-xs font-semibold text-amber-500">In corso</span>
+                              ? <span className="text-xs text-slate-500">{format(new Date(ep.ended_at), 'd MMM, HH:mm', { locale: it })}</span>
+                              : <span className="text-xs font-semibold text-amber-700">In corso</span>
                             }
                           </div>
                         </div>
                       </div>
                       <div className="flex">
-                        <button onClick={() => setEditEpisode(ep)} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                        <button onClick={() => setEditEpisode(ep)} className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
                         <DeleteButton onConfirm={() => deleteEp(ep.id)} />
                       </div>
                     </div>
@@ -375,7 +373,7 @@ export default function History() {
                       <div className="mt-2 pt-2 border-t border-slate-50 space-y-1">
                         {ep.logs.map(log => (
                           <div key={log.id} className="flex items-center justify-between">
-                            <span className="text-xs text-slate-400">{format(new Date(log.occurred_at), 'd MMM, HH:mm', { locale: it })}</span>
+                            <span className="text-xs text-slate-500">{format(new Date(log.occurred_at), 'd MMM, HH:mm', { locale: it })}</span>
                             {log.intensity && <IntensityDots intensity={log.intensity} />}
                           </div>
                         ))}
@@ -388,7 +386,7 @@ export default function History() {
               return null
             })}
             {recentAll.length === 0 && (
-              <div className="text-center text-slate-400 py-12">Nessuna registrazione</div>
+              <div className="text-center text-slate-500 py-12">Nessuna registrazione</div>
             )}
           </div>
         </div>

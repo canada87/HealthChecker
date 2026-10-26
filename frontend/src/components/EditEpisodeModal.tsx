@@ -4,14 +4,7 @@ import { X, Check, Trash2 } from 'lucide-react'
 import useEscapeKey from './useEscapeKey'
 import { api } from '../api'
 import type { IllnessEpisode } from '../types'
-
-const LEVELS = [
-  { value: 1, label: 'Lieve', color: '#22c55e' },
-  { value: 2, label: 'Moderata', color: '#84cc16' },
-  { value: 3, label: 'Forte', color: '#eab308' },
-  { value: 4, label: 'Molto forte', color: '#f97316' },
-  { value: 5, label: 'Severa', color: '#ef4444' },
-]
+import { LEVELS } from '../levels'
 
 interface LogState {
   id: number
@@ -102,11 +95,11 @@ export default function EditEpisodeModal({ episode, onClose, onSaved }: Props) {
               {episode.illness.emoji}
             </div>
             <div>
-              <p className="text-xs text-slate-400">Modifica episodio</p>
+              <p className="text-xs text-slate-500">Modifica episodio</p>
               <p className="font-semibold text-slate-800">{episode.illness.name}</p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
+          <button onClick={onClose} aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-500 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
             <X size={20} />
           </button>
         </div>
@@ -156,7 +149,7 @@ export default function EditEpisodeModal({ episode, onClose, onSaved }: Props) {
                       {idx === 0 ? 'Registrazione iniziale' : `Aggiornamento ${idx}`}
                     </span>
                     {logs.length > 1 && (
-                      <button onClick={() => removeLog(log.id)} aria-label="Elimina rilevazione" title="Elimina rilevazione" className="p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50">
+                      <button onClick={() => removeLog(log.id)} aria-label="Elimina rilevazione" title="Elimina rilevazione" className="p-1 rounded-md text-slate-500 hover:text-red-500 hover:bg-red-50">
                         <Trash2 size={14} />
                       </button>
                     )}
@@ -182,7 +175,7 @@ export default function EditEpisodeModal({ episode, onClose, onSaved }: Props) {
                         style={{
                           borderColor: log.intensity === l.value ? l.color : '#e2e8f0',
                           backgroundColor: log.intensity === l.value ? l.color + '18' : 'white',
-                          color: log.intensity === l.value ? l.color : '#94a3b8',
+                          color: log.intensity === l.value ? l.color : '#64748b',
                         }}
                       >
                         {l.value}

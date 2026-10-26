@@ -18,7 +18,7 @@ export default function Admin() {
 
   if (!currentUser?.is_admin) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-slate-400">
+      <div className="flex flex-col items-center justify-center h-full text-slate-500">
         <Shield size={48} className="mb-4 opacity-30" />
         <p>Accesso riservato agli amministratori</p>
       </div>
@@ -99,7 +99,7 @@ export default function Admin() {
               )}
             </div>
             <button onClick={() => { setEditUser(user); setName(user.name); setIsAdmin(user.is_admin); setAdding(false) }}
-              className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
+              className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
             {user.id !== currentUser.id && (
               <DeleteButton onConfirm={async () => { await api.deleteUser(user.id); load() }} size={16} />
             )}

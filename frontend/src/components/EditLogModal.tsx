@@ -56,11 +56,11 @@ export default function EditLogModal({ logId, type, name, emoji, color, currentA
               {emoji}
             </div>
             <div>
-              <p className="text-xs text-slate-400">Modifica data</p>
+              <p className="text-xs text-slate-500">Modifica data</p>
               <p className="font-semibold text-slate-800">{name}</p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
+          <button onClick={onClose} aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-500 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
             <X size={20} />
           </button>
         </div>

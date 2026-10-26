@@ -54,7 +54,7 @@ export default function CalendarView({ medLogs, illLogs, onDayClick }: Props) {
 
       <div className="grid grid-cols-7 mb-1">
         {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d, i) => (
-          <div key={i} className="text-center text-xs font-medium text-slate-400 py-1">{d}</div>
+          <div key={i} className="text-center text-xs font-medium text-slate-500 py-1">{d}</div>
         ))}
       </div>
 

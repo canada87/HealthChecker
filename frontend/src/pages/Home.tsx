@@ -3,13 +3,12 @@ import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import { useToast } from '../contexts/ToastContext'
 import type { Medication, Illness, IllnessEpisode } from '../types'
-import { LogOut, Plus, Check, CalendarDays } from 'lucide-react'
+import { LEVEL_COLORS } from '../levels'
+import { LogOut, Plus, Check, CalendarDays, Pill, Thermometer } from 'lucide-react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import LogPastModal from '../components/LogPastModal'
 import IllnessEpisodeModal from '../components/IllnessEpisodeModal'
-
-const LEVEL_COLORS = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444']
 
 function IntensityDots({ intensity, color }: { intensity: number; color: string }) {
   return (
@@ -81,7 +80,7 @@ export default function Home() {
         </div>
         <button
           onClick={() => setCurrentUser(null)}
-          className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 active:bg-slate-200 lg:hidden"
+          className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 active:bg-slate-200 lg:hidden"
           title="Cambia utente"
           aria-label="Cambia utente"
         >
@@ -102,7 +101,7 @@ export default function Home() {
                   <div className="flex items-center gap-2">
                     <span>{ep.illness.emoji}</span>
                     <span className="text-sm font-medium text-amber-800">{ep.illness.name}</span>
-                    <span className="text-xs text-amber-500">
+                    <span className="text-xs text-amber-700">
                       dal {format(new Date(ep.started_at), 'd MMM', { locale: it })}
                     </span>
                   </div>
@@ -116,10 +115,10 @@ export default function Home() {
 
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-slate-700">💊 Farmaci</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-700"><Pill size={20} className="text-indigo-500" aria-hidden="true" /> Farmaci</h2>
           <button
             onClick={() => setShowPastModal(true)}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-500 transition-colors px-2 py-1"
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-indigo-500 transition-colors px-2 py-1"
           >
             <CalendarDays size={14} />
             Passato
@@ -147,7 +146,7 @@ export default function Home() {
             )
           })}
           {medications.length === 0 && (
-            <div className="col-span-full text-center py-6 text-slate-400 text-sm">
+            <div className="col-span-full text-center py-6 text-slate-500 text-sm">
               <Plus size={24} className="mx-auto mb-1 opacity-50" />
               Aggiungi farmaci nelle impostazioni
             </div>
@@ -157,10 +156,10 @@ export default function Home() {
 
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-slate-700">🤒 Malattie</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-700"><Thermometer size={20} className="text-indigo-500" aria-hidden="true" /> Malattie</h2>
           <button
             onClick={() => setShowPastModal(true)}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-500 transition-colors px-2 py-1"
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-indigo-500 transition-colors px-2 py-1"
           >
             <CalendarDays size={14} />
             Passato
@@ -188,7 +187,7 @@ export default function Home() {
                   </div>
                   {ep && (
                     <span
-                      className="absolute -top-1 -right-1 text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full"
+                      className="absolute -top-1 -right-1 text-xs font-bold text-white px-1.5 py-0.5 rounded-full"
                       style={{ backgroundColor: ill.color }}
                     >
                       In corso
@@ -199,12 +198,12 @@ export default function Home() {
                 {ep && intensity && (
                   <IntensityDots intensity={intensity} color={activeColor} />
                 )}
-                {!ep && <span className="text-xs text-slate-400">Tocca per iniziare</span>}
+                {!ep && <span className="text-xs text-slate-500">Tocca per iniziare</span>}
               </button>
             )
           })}
           {illnesses.length === 0 && (
-            <div className="col-span-full text-center py-6 text-slate-400 text-sm">
+            <div className="col-span-full text-center py-6 text-slate-500 text-sm">
               <Plus size={24} className="mx-auto mb-1 opacity-50" />
               Aggiungi malattie nelle impostazioni
             </div>

@@ -29,7 +29,7 @@ export default function BottomNav() {
             end={to === '/'}
             className={({ isActive }) =>
               `flex-1 flex flex-col items-center py-2 gap-0.5 text-xs transition-colors ${
-                isActive ? 'text-indigo-600' : 'text-slate-400'
+                isActive ? 'text-indigo-600' : 'text-slate-500'
               }`
             }
           >

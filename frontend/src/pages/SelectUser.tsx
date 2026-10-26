@@ -49,7 +49,7 @@ export default function SelectUser() {
         ))}
 
         {users.length === 0 && (
-          <div className="text-center text-slate-400 py-8">
+          <div className="text-center text-slate-500 py-8">
             <UserPlus size={40} className="mx-auto mb-3 opacity-50" />
             <p>Nessun utente trovato.</p>
             <p className="text-sm mt-1">Configura il server.</p>

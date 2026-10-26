@@ -53,7 +53,7 @@ export default function DeleteButton({ onConfirm, label = 'Elimina', size = 15, 
       onClick={handleClick}
       aria-label={label}
       title={label}
-      className={`p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 ${className}`}
+      className={`p-2 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 ${className}`}
     >
       <Trash2 size={size} />
     </button>

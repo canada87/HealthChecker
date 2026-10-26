@@ -5,14 +5,7 @@ import { X, Play, RefreshCw, StopCircle } from 'lucide-react'
 import useEscapeKey from './useEscapeKey'
 import { api } from '../api'
 import type { Illness, IllnessEpisode } from '../types'
-
-const LEVELS = [
-  { value: 1, label: 'Lieve', color: '#22c55e' },
-  { value: 2, label: 'Moderata', color: '#84cc16' },
-  { value: 3, label: 'Forte', color: '#eab308' },
-  { value: 4, label: 'Molto forte', color: '#f97316' },
-  { value: 5, label: 'Severa', color: '#ef4444' },
-]
+import { LEVELS } from '../levels'
 
 function IntensityDots({ intensity, color }: { intensity: number; color: string }) {
   return (
@@ -44,10 +37,10 @@ function IntensitySelector({ selected, onSelect }: { selected: number | null; on
             backgroundColor: selected === l.value ? l.color + '18' : 'white',
           }}
         >
-          <span className="text-lg font-bold" style={{ color: selected === l.value ? l.color : '#94a3b8' }}>
+          <span className="text-lg font-bold" style={{ color: selected === l.value ? l.color : '#64748b' }}>
             {l.value}
           </span>
-          <span className="text-[10px] font-medium text-slate-500 leading-tight text-center">{l.label}</span>
+          <span className="text-xs font-medium text-slate-500 leading-tight text-center">{l.label}</span>
         </button>
       ))}
     </div>
@@ -153,16 +146,16 @@ export default function IllnessEpisodeModal({ illness, activeEpisode, onClose, o
                   <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: illness.color }}>
                     In corso
                   </span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-500">
                     dal {format(new Date(activeEpisode.started_at), 'd MMM, HH:mm', { locale: it })}
                   </span>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400">Nessun episodio attivo</p>
+                <p className="text-xs text-slate-500">Nessun episodio attivo</p>
               )}
             </div>
           </div>
-          <button onClick={onClose} data-native-enter aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
+          <button onClick={onClose} data-native-enter aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-500 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
             <X size={20} />
           </button>
         </div>
@@ -176,13 +169,13 @@ export default function IllnessEpisodeModal({ illness, activeEpisode, onClose, o
                 <div className="space-y-1.5">
                   {activeEpisode.logs.map(log => (
                     <div key={log.id} className="flex items-center justify-between">
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         {format(new Date(log.occurred_at), 'd MMM, HH:mm', { locale: it })}
                       </span>
                       {log.intensity != null && (
                         <div className="flex items-center gap-2">
                           <IntensityDots intensity={log.intensity} color={LEVELS[log.intensity - 1].color} />
-                          <span className="text-xs font-medium" style={{ color: LEVELS[log.intensity - 1].color }}>
+                          <span className="text-xs font-medium text-slate-600">
                             {LEVELS[log.intensity - 1].label}
                           </span>
                         </div>

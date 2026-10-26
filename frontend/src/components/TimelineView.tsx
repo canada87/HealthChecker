@@ -311,7 +311,7 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
               <div key={i} className="absolute left-0 right-0 border-t"
                 style={{ top: i * dayH, height: dayH, borderColor: isToday ? '#818cf8' : '#f1f5f9' }}>
                 <div className="absolute top-1 left-0 flex flex-col items-center" style={{ width: LABEL_W }}>
-                  <span className={`text-[10px] leading-none font-medium uppercase ${isToday ? 'text-indigo-500' : 'text-slate-400'}`}>
+                  <span className={`text-xs leading-none font-medium uppercase ${isToday ? 'text-indigo-500' : 'text-slate-500'}`}>
                     {format(day, 'EEE', { locale: it }).slice(0, 2)}
                   </span>
                   <span className={`text-sm font-bold leading-none mt-0.5 ${isToday ? 'text-indigo-600' : 'text-slate-700'}`}>
@@ -398,7 +398,7 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
       </div>
 
       {visEps.length === 0 && visMeds.length === 0 && (
-        <p className="py-8 text-center text-sm text-slate-400 shrink-0">
+        <p className="py-8 text-center text-sm text-slate-500 shrink-0">
           Nessuna registrazione in questo periodo
         </p>
       )}

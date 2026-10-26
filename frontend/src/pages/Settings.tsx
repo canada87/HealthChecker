@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import type { Medication, Illness } from '../types'
-import { Plus, Pencil, X, Check } from 'lucide-react'
+import { Plus, Pencil, X, Check, Pill, Thermometer, BarChart2 } from 'lucide-react'
 import DeleteButton from '../components/DeleteButton'
 
 const FREQ_WINDOW_KEY = 'freqWindowYears'
@@ -126,11 +126,11 @@ export default function Settings() {
       <h1 className="text-2xl font-bold text-slate-800 mb-6">Impostazioni</h1>
 
       <section className="mb-6">
-        <h2 className="text-lg font-bold text-slate-700 mb-3">📊 Statistiche</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-700 mb-3"><BarChart2 size={20} className="text-indigo-500" aria-hidden="true" /> Statistiche</h2>
         <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
           <div>
             <p className="text-sm font-medium text-slate-700 mb-1">Finestra per frequenza media</p>
-            <p className="text-xs text-slate-400 mb-3">
+            <p className="text-xs text-slate-500 mb-3">
               Periodo su cui calcolare ogni quanti giorni viene preso il farmaco o compare la malattia.
               Il calcolo parte dal primo evento nella finestra.
             </p>
@@ -156,7 +156,7 @@ export default function Settings() {
       <div className="lg:grid lg:grid-cols-2 lg:gap-8">
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-slate-700">💊 Farmaci</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-700"><Pill size={20} className="text-indigo-500" aria-hidden="true" /> Farmaci</h2>
           {!addingMed && !editMed && (
             <button onClick={() => { setAddingMed(true); setMedForm(defaultMedForm) }}
               className="flex items-center gap-1 text-sm text-indigo-600 font-medium">
@@ -185,7 +185,7 @@ export default function Settings() {
               </div>
               <span className="flex-1 font-medium text-slate-700">{med.name}</span>
               <button onClick={() => { setEditMed(med); setMedForm({ name: med.name, color: med.color, emoji: med.emoji }); setAddingMed(false) }}
-                className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
+                className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
               <DeleteButton onConfirm={async () => { await api.deleteMedication(med.id); load() }} size={16} />
             </div>
           ))}
@@ -194,7 +194,7 @@ export default function Settings() {
 
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-slate-700">🤒 Malattie</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-700"><Thermometer size={20} className="text-indigo-500" aria-hidden="true" /> Malattie</h2>
           {!addingIll && !editIll && (
             <button onClick={() => { setAddingIll(true); setIllForm(defaultIllForm) }}
               className="flex items-center gap-1 text-sm text-indigo-600 font-medium">
@@ -223,7 +223,7 @@ export default function Settings() {
               </div>
               <span className="flex-1 font-medium text-slate-700">{ill.name}</span>
               <button onClick={() => { setEditIll(ill); setIllForm({ name: ill.name, color: ill.color, emoji: ill.emoji }); setAddingIll(false) }}
-                className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
+                className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
               <DeleteButton onConfirm={async () => { await api.deleteIllness(ill.id); load() }} size={16} />
             </div>
           ))}
