@@ -3,19 +3,23 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay,
 import { it } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
+const CRISIS_COLOR = '#ef4444'
+
 interface DayData {
   date: Date
   medColors: string[]
   illColors: string[]
+  crisisColors: string[]
 }
 
 interface Props {
   medLogs: { taken_at: string; medication: { color: string; name: string } }[]
   illLogs: { occurred_at: string; illness: { color: string; name: string } }[]
+  crises?: { started_at: string; category: { color: string } | null }[]
   onDayClick: (date: Date) => void
 }
 
-export default function CalendarView({ medLogs, illLogs, onDayClick }: Props) {
+export default function CalendarView({ medLogs, illLogs, crises = [], onDayClick }: Props) {
   const [current, setCurrent] = useState(new Date())
 
   const monthStart = startOfMonth(current)
@@ -32,6 +36,10 @@ export default function CalendarView({ medLogs, illLogs, onDayClick }: Props) {
     illColors: illLogs
       .filter(l => isSameDay(new Date(l.occurred_at), date))
       .map(l => l.illness.color)
+      .filter((v, i, a) => a.indexOf(v) === i),
+    crisisColors: crises
+      .filter(c => isSameDay(new Date(c.started_at), date))
+      .map(c => c.category?.color ?? CRISIS_COLOR)
       .filter((v, i, a) => a.indexOf(v) === i),
   }))
 
@@ -60,8 +68,9 @@ export default function CalendarView({ medLogs, illLogs, onDayClick }: Props) {
 
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} />)}
-        {dayData.map(({ date, medColors, illColors }) => {
-          const hasEvents = medColors.length > 0 || illColors.length > 0
+        {dayData.map(({ date, medColors, illColors, crisisColors }) => {
+          const dots = [...medColors.slice(0, 2), ...illColors.slice(0, 2), ...crisisColors.slice(0, 2)]
+          const hasEvents = dots.length > 0
           return (
             <button
               key={date.toISOString()}
@@ -79,14 +88,14 @@ export default function CalendarView({ medLogs, illLogs, onDayClick }: Props) {
               </span>
               {hasEvents && !isToday(date) && (
                 <div className="flex gap-0.5 mt-0.5">
-                  {[...medColors.slice(0, 2), ...illColors.slice(0, 2)].map((c, i) => (
+                  {dots.map((c, i) => (
                     <div key={i} className="w-1 h-1 rounded-full" style={{ backgroundColor: c }} />
                   ))}
                 </div>
               )}
               {hasEvents && isToday(date) && (
                 <div className="flex gap-0.5 mt-0.5">
-                  {[...medColors.slice(0, 2), ...illColors.slice(0, 2)].map((_, i) => (
+                  {dots.map((_, i) => (
                     <div key={i} className="w-1 h-1 rounded-full bg-white/70" />
                   ))}
                 </div>

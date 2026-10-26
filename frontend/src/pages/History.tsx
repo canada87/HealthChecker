@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
-import type { MedicationLog, IllnessLog, Medication, Illness, IllnessEpisode } from '../types'
+import type { MedicationLog, IllnessLog, Medication, Illness, IllnessEpisode, Crisis, CrisisCategory } from '../types'
 import { LEVEL_COLORS, LEVEL_LABELS } from '../levels'
 import CalendarView from '../components/CalendarView'
 import TimelineView from '../components/TimelineView'
 import LogPastModal from '../components/LogPastModal'
 import EditLogModal from '../components/EditLogModal'
 import EditEpisodeModal from '../components/EditEpisodeModal'
+import CrisisModal from '../components/CrisisModal'
+import { durationMinutes, formatDuration } from '../crisis'
 import useIsDesktop from '../components/useIsDesktop'
 import { format, isSameDay } from 'date-fns'
 import { it } from 'date-fns/locale'
@@ -31,6 +33,33 @@ function IntensityDots({ intensity }: { intensity: number }) {
         <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: i <= intensity ? color : '#e2e8f0' }} />
       ))}
       <span className="text-xs ml-1 text-slate-600">{LEVEL_LABELS[intensity - 1]}</span>
+    </div>
+  )
+}
+
+function CrisisRow({ crisis, showDate, onEdit, onDelete }: {
+  crisis: Crisis; showDate: boolean; onEdit: () => void; onDelete: () => void
+}) {
+  const cat = crisis.category
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: (cat?.color ?? '#ef4444') + '20' }}>
+          {cat?.emoji ?? '⚡'}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-slate-700 truncate">Crisi · {cat?.name ?? 'Senza categoria'}</div>
+          <div className="text-xs text-slate-500">
+            {format(new Date(crisis.started_at), showDate ? 'd MMM, HH:mm' : 'HH:mm', { locale: it })}
+            {' · '}{crisis.ended_at ? formatDuration(durationMinutes(crisis)) : 'In corso'}
+          </div>
+          {crisis.intensity != null && <div className="mt-0.5"><IntensityDots intensity={crisis.intensity} /></div>}
+        </div>
+      </div>
+      <div className="flex shrink-0">
+        <button onClick={onEdit} className="p-2 rounded-lg text-slate-500 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+        <DeleteButton onConfirm={onDelete} />
+      </div>
     </div>
   )
 }
@@ -61,17 +90,24 @@ export default function History() {
   const [showModal, setShowModal] = useState(false)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [editEpisode, setEditEpisode] = useState<IllnessEpisode | null>(null)
-  const [listFilter, setListFilter] = useState<{ type: 'med' | 'ill' | 'episode'; id: number } | null>(null)
+  const [listFilter, setListFilter] = useState<{ type: 'med' | 'ill' | 'episode' | 'crisis'; id: number } | null>(null)
+  const [crises, setCrises] = useState<Crisis[]>([])
+  const [crisisCategories, setCrisisCategories] = useState<CrisisCategory[]>([])
+  const [editCrisis, setEditCrisis] = useState<Crisis | null>(null)
 
   const load = useCallback(async () => {
     if (!currentUser) return
-    const [ml, il, eps, meds, ills] = await Promise.all([
+    const [ml, il, eps, meds, ills, cs, cats] = await Promise.all([
       api.getMedicationLogs(currentUser.id),
       api.getIllnessLogs(currentUser.id),
       api.getIllnessEpisodes(currentUser.id),
       api.getMedications(currentUser.id),
       api.getIllnesses(currentUser.id),
+      api.getCrises(currentUser.id),
+      api.getCrisisCategories(currentUser.id),
     ])
+    setCrises(cs)
+    setCrisisCategories(cats)
     setMedLogs(ml)
     setIllLogs(il)
     setIllEpisodes(eps)
@@ -91,11 +127,13 @@ export default function History() {
   const dayMedLogs = selectedDay ? medLogs.filter(l => isSameDay(new Date(l.taken_at), selectedDay)) : []
   const dayIllLogs = selectedDay ? illLogs.filter(l => !l.episode_id && isSameDay(new Date(l.occurred_at), selectedDay)) : []
   const dayEpStarts = selectedDay ? illEpisodes.filter(ep => isSameDay(new Date(ep.started_at), selectedDay)) : []
+  const dayCrises = selectedDay ? crises.filter(c => isSameDay(new Date(c.started_at), selectedDay)) : []
   const dayEpEnds = selectedDay ? illEpisodes.filter(ep => ep.ended_at && isSameDay(new Date(ep.ended_at), selectedDay)) : []
 
   const deleteML = async (id: number) => { await api.deleteMedicationLog(id); load() }
   const deleteIL = async (id: number) => { await api.deleteIllnessLog(id); load() }
   const deleteEp = async (id: number) => { await api.deleteIllnessEpisode(id); load() }
+  const deleteCrisis = async (id: number) => { await api.deleteCrisis(id); load() }
 
   // List view items
   const legacyIllLogs = illLogs.filter(l => !l.episode_id)
@@ -104,10 +142,12 @@ export default function History() {
     ...medLogs.map(l => ({ kind: 'med' as const, id: l.id, at: new Date(l.taken_at), data: l })),
     ...legacyIllLogs.map(l => ({ kind: 'ill' as const, id: l.id, at: new Date(l.occurred_at), data: l })),
     ...illEpisodes.map(ep => ({ kind: 'episode' as const, id: ep.id, at: new Date(ep.started_at), data: ep })),
+    ...crises.map(c => ({ kind: 'crisis' as const, id: c.id, at: new Date(c.started_at), data: c })),
   ]
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .filter(item => {
       if (!listFilter) return true
+      if (listFilter.type === 'crisis') return item.kind === 'crisis'
       if (listFilter.type === 'med' && item.kind === 'med') {
         return (item.data as MedicationLog).medication_id === listFilter.id
       }
@@ -155,6 +195,7 @@ export default function History() {
           <CalendarView
             medLogs={medLogs}
             illLogs={illCalendarDots}
+            crises={crises}
             onDayClick={d => setSelectedDay(prev => prev && isSameDay(prev, d) ? null : d)}
           />
           {selectedDay && (
@@ -241,7 +282,14 @@ export default function History() {
                   </div>
                 ))}
 
-              {dayMedLogs.length === 0 && dayIllLogs.length === 0 && dayEpStarts.length === 0 && dayEpEnds.filter(ep => !isSameDay(new Date(ep.started_at), selectedDay)).length === 0 && (
+              {/* Crises started on this day */}
+              {dayCrises.map(c => (
+                <div key={`crisis-${c.id}`} className="py-2 border-b border-slate-50">
+                  <CrisisRow crisis={c} showDate={false} onEdit={() => setEditCrisis(c)} onDelete={() => deleteCrisis(c.id)} />
+                </div>
+              ))}
+
+              {dayMedLogs.length === 0 && dayIllLogs.length === 0 && dayEpStarts.length === 0 && dayCrises.length === 0 && dayEpEnds.filter(ep => !isSameDay(new Date(ep.started_at), selectedDay)).length === 0 && (
                 <p className="text-sm text-slate-500 text-center py-2">Nessuna registrazione</p>
               )}
             </div>
@@ -288,6 +336,18 @@ export default function History() {
                 </button>
               )
             })}
+            {crises.length > 0 && (() => {
+              const active = listFilter?.type === 'crisis'
+              return (
+                <button
+                  onClick={() => setListFilter(active ? null : { type: 'crisis', id: 0 })}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                  style={{ backgroundColor: active ? '#ef4444' : 'white', borderColor: active ? '#ef4444' : '#e2e8f0', color: active ? 'white' : '#64748b' }}
+                >
+                  <span>⚡</span>Crisi
+                </button>
+              )
+            })()}
           </div>
 
           <div className="space-y-2">
@@ -383,6 +443,15 @@ export default function History() {
                 )
               }
 
+              if (item.kind === 'crisis') {
+                const c = item.data as Crisis
+                return (
+                  <div key={`crisis-${c.id}`} className="bg-white rounded-xl p-3 shadow-sm">
+                    <CrisisRow crisis={c} showDate onEdit={() => setEditCrisis(c)} onDelete={() => deleteCrisis(c.id)} />
+                  </div>
+                )
+              }
+
               return null
             })}
             {recentAll.length === 0 && (
@@ -412,6 +481,15 @@ export default function History() {
           color={editTarget.color}
           currentAt={editTarget.at}
           onClose={() => setEditTarget(null)}
+          onSaved={load}
+        />
+      )}
+
+      {editCrisis && (
+        <CrisisModal
+          crisis={editCrisis}
+          categories={crisisCategories}
+          onClose={() => setEditCrisis(null)}
           onSaved={load}
         />
       )}
