@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { UserProvider, useUser } from './contexts/UserContext'
+import { ToastProvider } from './contexts/ToastContext'
 import SelectUser from './pages/SelectUser'
 import Home from './pages/Home'
 import History from './pages/History'
@@ -39,9 +40,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <UserProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </ToastProvider>
     </UserProvider>
   )
 }

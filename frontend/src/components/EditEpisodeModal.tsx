@@ -106,7 +106,7 @@ export default function EditEpisodeModal({ episode, onClose, onSaved }: Props) {
               <p className="font-semibold text-slate-800">{episode.illness.name}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl">
+          <button onClick={onClose} aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
             <X size={20} />
           </button>
         </div>
@@ -156,7 +156,7 @@ export default function EditEpisodeModal({ episode, onClose, onSaved }: Props) {
                       {idx === 0 ? 'Registrazione iniziale' : `Aggiornamento ${idx}`}
                     </span>
                     {logs.length > 1 && (
-                      <button onClick={() => removeLog(log.id)} className="p-1 text-slate-300 hover:text-red-400">
+                      <button onClick={() => removeLog(log.id)} aria-label="Elimina rilevazione" title="Elimina rilevazione" className="p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50">
                         <Trash2 size={14} />
                       </button>
                     )}

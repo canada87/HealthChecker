@@ -41,13 +41,13 @@ export default function CalendarView({ medLogs, illLogs, onDayClick }: Props) {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4">
       <div className="flex items-center justify-between mb-4">
-        <button onClick={prev} className="p-2 rounded-full hover:bg-slate-100 active:bg-slate-200">
+        <button onClick={prev} aria-label="Mese precedente" title="Mese precedente" className="p-2 rounded-full hover:bg-slate-100 active:bg-slate-200">
           <ChevronLeft size={20} />
         </button>
         <h2 className="font-semibold text-slate-800 capitalize">
           {format(current, 'MMMM yyyy', { locale: it })}
         </h2>
-        <button onClick={next} className="p-2 rounded-full hover:bg-slate-100 active:bg-slate-200">
+        <button onClick={next} aria-label="Mese successivo" title="Mese successivo" className="p-2 rounded-full hover:bg-slate-100 active:bg-slate-200">
           <ChevronRight size={20} />
         </button>
       </div>

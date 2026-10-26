@@ -219,14 +219,14 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
       <div className="px-4 py-3 border-b border-slate-100 space-y-2 shrink-0">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 flex-1 min-w-0">
-            <button onClick={prev}
+            <button onClick={prev} aria-label="Periodo precedente" title="Periodo precedente"
               className="p-1.5 rounded-full hover:bg-slate-100 active:bg-slate-200 transition-colors shrink-0">
               <ChevronLeft size={18} className="text-slate-600" />
             </button>
             <span className="text-sm font-medium text-slate-700 flex-1 text-center truncate">
               {format(winStart, 'd MMM', { locale: it })} – {format(addDays(winEnd, -1), 'd MMM yyyy', { locale: it })}
             </span>
-            <button onClick={next}
+            <button onClick={next} aria-label="Periodo successivo" title="Periodo successivo"
               className="p-1.5 rounded-full hover:bg-slate-100 active:bg-slate-200 transition-colors shrink-0">
               <ChevronRight size={18} className="text-slate-600" />
             </button>
@@ -246,6 +246,8 @@ export default function TimelineView({ medLogs, illEpisodes }: Props) {
           <button
             onClick={() => setShowPicker(p => !p)}
             title="Seleziona periodo manuale"
+            aria-label="Seleziona periodo manuale"
+            aria-pressed={showPicker}
             className={`p-1.5 rounded-lg transition-colors shrink-0 ${
               showPicker || customEnd ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-500'
             }`}>

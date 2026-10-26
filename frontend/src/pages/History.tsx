@@ -10,7 +10,8 @@ import EditEpisodeModal from '../components/EditEpisodeModal'
 import useIsDesktop from '../components/useIsDesktop'
 import { format, isSameDay } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { Trash2, Plus, Pencil, Clock } from 'lucide-react'
+import { Plus, Pencil, Clock } from 'lucide-react'
+import DeleteButton from '../components/DeleteButton'
 
 const LEVEL_COLORS = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444']
 const LEVEL_LABELS = ['Lieve', 'Moderata', 'Forte', 'Molto forte', 'Severa']
@@ -183,8 +184,8 @@ export default function History() {
                     </div>
                   </div>
                   <div className="flex">
-                    <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
-                    <button onClick={() => deleteML(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                    <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                    <DeleteButton onConfirm={() => deleteML(l.id)} />
                   </div>
                 </div>
               ))}
@@ -200,8 +201,8 @@ export default function History() {
                     </div>
                   </div>
                   <div className="flex">
-                    <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
-                    <button onClick={() => deleteIL(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                    <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                    <DeleteButton onConfirm={() => deleteIL(l.id)} />
                   </div>
                 </div>
               ))}
@@ -220,8 +221,8 @@ export default function History() {
                     </div>
                   </div>
                   <div className="flex">
-                    <button onClick={() => setEditEpisode(ep)} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
-                    <button onClick={() => deleteEp(ep.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                    <button onClick={() => setEditEpisode(ep)} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                    <DeleteButton onConfirm={() => deleteEp(ep.id)} />
                   </div>
                 </div>
               ))}
@@ -307,8 +308,8 @@ export default function History() {
                       </div>
                     </div>
                     <div className="flex">
-                      <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
-                      <button onClick={() => deleteML(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                      <button onClick={() => setEditTarget({ logId: l.id, type: 'med', name: l.medication.name, emoji: l.medication.emoji, color: l.medication.color, at: new Date(l.taken_at) })} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                      <DeleteButton onConfirm={() => deleteML(l.id)} />
                     </div>
                   </div>
                 )
@@ -328,8 +329,8 @@ export default function History() {
                       </div>
                     </div>
                     <div className="flex">
-                      <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
-                      <button onClick={() => deleteIL(l.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                      <button onClick={() => setEditTarget({ logId: l.id, type: 'ill', name: l.illness.name, emoji: l.illness.emoji, color: l.illness.color, at: new Date(l.occurred_at) })} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                      <DeleteButton onConfirm={() => deleteIL(l.id)} />
                     </div>
                   </div>
                 )
@@ -362,8 +363,8 @@ export default function History() {
                         </div>
                       </div>
                       <div className="flex">
-                        <button onClick={() => setEditEpisode(ep)} className="p-2 text-slate-300 hover:text-indigo-400"><Pencil size={15} /></button>
-                        <button onClick={() => deleteEp(ep.id)} className="p-2 text-slate-300 hover:text-red-400"><Trash2 size={15} /></button>
+                        <button onClick={() => setEditEpisode(ep)} className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={15} /></button>
+                        <DeleteButton onConfirm={() => deleteEp(ep.id)} />
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-1">

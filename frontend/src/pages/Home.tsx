@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
+import { useToast } from '../contexts/ToastContext'
 import type { Medication, Illness, IllnessEpisode } from '../types'
 import { LogOut, Plus, Check, CalendarDays } from 'lucide-react'
 import { format } from 'date-fns'
@@ -22,6 +23,7 @@ function IntensityDots({ intensity, color }: { intensity: number; color: string 
 
 export default function Home() {
   const { currentUser, setCurrentUser } = useUser()
+  const showToast = useToast()
   const [medications, setMedications] = useState<Medication[]>([])
   const [illnesses, setIllnesses] = useState<Illness[]>([])
   const [activeEpisodes, setActiveEpisodes] = useState<IllnessEpisode[]>([])
@@ -48,9 +50,16 @@ export default function Home() {
     if (logging) return
     setLogging(med.id)
     try {
-      await api.logMedication(med.id)
+      const log = await api.logMedication(med.id)
       setJustLogged(med.id)
       setTimeout(() => setJustLogged(null), 2000)
+      showToast({
+        message: `Assunzione registrata: ${med.name}`,
+        onAction: async () => {
+          await api.deleteMedicationLog(log.id)
+          showToast({ message: 'Registrazione annullata' })
+        },
+      })
     } finally {
       setLogging(null)
     }
@@ -102,12 +111,6 @@ export default function Home() {
               )
             })}
           </div>
-        </div>
-      )}
-
-      {justLogged !== null && (
-        <div className="mb-5 bg-green-50 rounded-2xl p-3 border border-green-100">
-          <p className="text-sm text-green-800 font-medium">Registrato</p>
         </div>
       )}
 

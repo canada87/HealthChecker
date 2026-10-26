@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import type { User } from '../types'
-import { Plus, Pencil, Trash2, X, Check, Shield } from 'lucide-react'
+import { Plus, Pencil, X, Check, Shield } from 'lucide-react'
+import DeleteButton from '../components/DeleteButton'
 
 export default function Admin() {
   const { currentUser } = useUser()
@@ -98,10 +99,9 @@ export default function Admin() {
               )}
             </div>
             <button onClick={() => { setEditUser(user); setName(user.name); setIsAdmin(user.is_admin); setAdding(false) }}
-              className="p-2 text-slate-400 hover:text-indigo-500"><Pencil size={16} /></button>
+              className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
             {user.id !== currentUser.id && (
-              <button onClick={async () => { await api.deleteUser(user.id); load() }}
-                className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+              <DeleteButton onConfirm={async () => { await api.deleteUser(user.id); load() }} size={16} />
             )}
           </div>
         ))}

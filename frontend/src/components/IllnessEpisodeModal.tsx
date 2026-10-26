@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { X, Play, RefreshCw, StopCircle } from 'lucide-react'
@@ -30,12 +30,15 @@ function IntensityDots({ intensity, color }: { intensity: number; color: string 
 
 function IntensitySelector({ selected, onSelect }: { selected: number | null; onSelect: (v: number) => void }) {
   return (
+    <>
     <div className="flex gap-2 justify-between">
       {LEVELS.map(l => (
         <button
           key={l.value}
           onClick={() => onSelect(l.value)}
-          className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border-2 transition-all"
+          aria-pressed={selected === l.value}
+          title={`${l.label} (tasto ${l.value})`}
+          className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border-2 transition-all hover:shadow-md"
           style={{
             borderColor: selected === l.value ? l.color : '#e2e8f0',
             backgroundColor: selected === l.value ? l.color + '18' : 'white',
@@ -48,6 +51,8 @@ function IntensitySelector({ selected, onSelect }: { selected: number | null; on
         </button>
       ))}
     </div>
+    <p className="hidden lg:block text-xs text-slate-500 mt-2">Tasti 1–5 per scegliere, Invio per confermare</p>
+    </>
   )
 }
 
@@ -60,6 +65,9 @@ interface Props {
 
 export default function IllnessEpisodeModal({ illness, activeEpisode, onClose, onAction }: Props) {
   useEscapeKey(onClose)
+  // Move focus into the dialog so keyboard shortcuts don't hit the card behind it.
+  const panelRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { panelRef.current?.focus() }, [])
   const [intensity, setIntensity] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -103,9 +111,32 @@ export default function IllnessEpisodeModal({ illness, activeEpisode, onClose, o
     }
   }
 
+  // Keyboard: 1–5 pick the intensity, Enter confirms (start or update).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key >= '1' && e.key <= '5') {
+        setIntensity(Number(e.key))
+      } else if (e.key === 'Enter' && !(e.target instanceof HTMLElement && e.target.closest('[data-native-enter]'))) {
+        e.preventDefault()
+        if (activeEpisode) handleUpdate()
+        else handleStart()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center lg:p-6" onClick={onClose}>
-      <div className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-lg p-5 pb-10 lg:pb-5 shadow-xl" onClick={e => e.stopPropagation()}>
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={illness.name}
+        className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-lg p-5 pb-10 lg:pb-5 shadow-xl focus:outline-none"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
@@ -131,7 +162,7 @@ export default function IllnessEpisodeModal({ illness, activeEpisode, onClose, o
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl">
+          <button onClick={onClose} data-native-enter aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
             <X size={20} />
           </button>
         </div>
@@ -178,6 +209,7 @@ export default function IllnessEpisodeModal({ illness, activeEpisode, onClose, o
               </button>
               <button
                 onClick={handleEnd}
+                data-native-enter
                 disabled={saving}
                 className="flex-1 py-3 rounded-xl bg-red-50 text-red-500 font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40 active:scale-[0.98] transition-all"
               >

@@ -61,7 +61,7 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-800">Registra nel passato</h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl">
+          <button onClick={onClose} aria-label="Chiudi" title="Chiudi (Esc)" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
             <X size={20} />
           </button>
         </div>

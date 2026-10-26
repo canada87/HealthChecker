@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { api } from '../api'
 import { useUser } from '../contexts/UserContext'
 import type { Medication, Illness } from '../types'
-import { Plus, Pencil, Trash2, X, Check } from 'lucide-react'
+import { Plus, Pencil, X, Check } from 'lucide-react'
+import DeleteButton from '../components/DeleteButton'
 
 const FREQ_WINDOW_KEY = 'freqWindowYears'
 const DEFAULT_WINDOW_YEARS = 2
@@ -184,9 +185,8 @@ export default function Settings() {
               </div>
               <span className="flex-1 font-medium text-slate-700">{med.name}</span>
               <button onClick={() => { setEditMed(med); setMedForm({ name: med.name, color: med.color, emoji: med.emoji }); setAddingMed(false) }}
-                className="p-2 text-slate-400 hover:text-indigo-500"><Pencil size={16} /></button>
-              <button onClick={async () => { await api.deleteMedication(med.id); load() }}
-                className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
+              <DeleteButton onConfirm={async () => { await api.deleteMedication(med.id); load() }} size={16} />
             </div>
           ))}
         </div>
@@ -223,9 +223,8 @@ export default function Settings() {
               </div>
               <span className="flex-1 font-medium text-slate-700">{ill.name}</span>
               <button onClick={() => { setEditIll(ill); setIllForm({ name: ill.name, color: ill.color, emoji: ill.emoji }); setAddingIll(false) }}
-                className="p-2 text-slate-400 hover:text-indigo-500"><Pencil size={16} /></button>
-              <button onClick={async () => { await api.deleteIllness(ill.id); load() }}
-                className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                className="p-2 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50" aria-label="Modifica" title="Modifica"><Pencil size={16} /></button>
+              <DeleteButton onConfirm={async () => { await api.deleteIllness(ill.id); load() }} size={16} />
             </div>
           ))}
         </div>
