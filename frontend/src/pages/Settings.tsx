@@ -4,6 +4,11 @@ import { useUser } from '../contexts/UserContext'
 import type { Medication, Illness } from '../types'
 import { Plus, Pencil, X, Check, Pill, Thermometer, BarChart2 } from 'lucide-react'
 import DeleteButton from '../components/DeleteButton'
+import { format } from 'date-fns'
+import { it } from 'date-fns/locale'
+
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || 'dev'
+const APP_COMMIT = import.meta.env.VITE_APP_COMMIT
 
 const FREQ_WINDOW_KEY = 'freqWindowYears'
 const DEFAULT_WINDOW_YEARS = 2
@@ -230,6 +235,12 @@ export default function Settings() {
         </div>
       </section>
       </div>
+
+      <p className="mt-10 text-center text-xs text-slate-500">
+        HealthTracker {APP_VERSION}
+        {APP_COMMIT && <> · {APP_COMMIT.slice(0, 7)}</>}
+        {' · '}build {format(new Date(__BUILD_DATE__), 'd MMM yyyy, HH:mm', { locale: it })}
+      </p>
     </div>
   )
 }

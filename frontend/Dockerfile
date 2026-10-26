@@ -3,6 +3,10 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --legacy-peer-deps
 COPY . .
+# Shown in Settings so you can tell which release is running (passed by the publish workflow)
+ARG APP_VERSION=dev
+ARG APP_COMMIT=
+ENV VITE_APP_VERSION=$APP_VERSION VITE_APP_COMMIT=$APP_COMMIT
 RUN npm run build
 
 FROM nginx:alpine
