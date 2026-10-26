@@ -86,7 +86,7 @@ export default function Stats() {
     <div className="px-4 pt-6 pb-4">
       <h1 className="text-2xl font-bold text-slate-800 mb-4">Statistiche</h1>
 
-      <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
+      <div className="flex bg-slate-100 rounded-xl p-1 mb-4 lg:max-w-sm">
         <button
           onClick={() => setTab('med')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'med' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
@@ -101,10 +101,10 @@ export default function Stats() {
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {items.map(item => <StatCard key={item.id} item={item} />)}
         {items.length === 0 && (
-          <div className="text-center text-slate-400 py-12">
+          <div className="col-span-full text-center text-slate-400 py-12">
             Nessun dato disponibile
           </div>
         )}

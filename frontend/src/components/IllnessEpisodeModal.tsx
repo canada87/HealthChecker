@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { X, Play, RefreshCw, StopCircle } from 'lucide-react'
+import useEscapeKey from './useEscapeKey'
 import { api } from '../api'
 import type { Illness, IllnessEpisode } from '../types'
 
@@ -58,6 +59,7 @@ interface Props {
 }
 
 export default function IllnessEpisodeModal({ illness, activeEpisode, onClose, onAction }: Props) {
+  useEscapeKey(onClose)
   const [intensity, setIntensity] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -102,8 +104,8 @@ export default function IllnessEpisodeModal({ illness, activeEpisode, onClose, o
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={onClose}>
-      <div className="bg-white rounded-t-3xl w-full max-w-lg p-5 pb-10" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center lg:p-6" onClick={onClose}>
+      <div className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-lg p-5 pb-10 lg:pb-5 shadow-xl" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">

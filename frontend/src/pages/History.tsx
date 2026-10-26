@@ -7,6 +7,7 @@ import TimelineView from '../components/TimelineView'
 import LogPastModal from '../components/LogPastModal'
 import EditLogModal from '../components/EditLogModal'
 import EditEpisodeModal from '../components/EditEpisodeModal'
+import useIsDesktop from '../components/useIsDesktop'
 import { format, isSameDay } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { Trash2, Plus, Pencil, Clock } from 'lucide-react'
@@ -50,6 +51,7 @@ function EpisodeDuration({ started_at, ended_at }: { started_at: string; ended_a
 
 export default function History() {
   const { currentUser } = useUser()
+  const isDesktop = useIsDesktop()
   const [medLogs, setMedLogs] = useState<MedicationLog[]>([])
   const [illLogs, setIllLogs] = useState<IllnessLog[]>([])
   const [illEpisodes, setIllEpisodes] = useState<IllnessEpisode[]>([])
@@ -122,27 +124,34 @@ export default function History() {
     })
     .slice(0, 50)
 
+  // Desktop shows the list permanently beside timeline/calendar, so 'list' is not a tab there.
+  const tabs = isDesktop ? (['timeline', 'cal'] as const) : (['timeline', 'cal', 'list'] as const)
+  const viewTab = isDesktop && tab === 'list' ? 'timeline' : tab
+  const showList = isDesktop || tab === 'list'
+
   return (
     <div className="px-4 pt-6 pb-4">
       <h1 className="text-2xl font-bold text-slate-800 mb-4">Storico</h1>
 
+      <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start">
+      <div>
       <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
-        {(['timeline', 'cal', 'list'] as const).map(t => (
+        {tabs.map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${viewTab === t ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             {t === 'timeline' ? 'Timeline' : t === 'cal' ? 'Calendario' : 'Lista'}
           </button>
         ))}
       </div>
 
-      {tab === 'timeline' && (
+      {viewTab === 'timeline' && (
         <TimelineView medLogs={medLogs} illEpisodes={illEpisodes} />
       )}
 
-      {tab === 'cal' && (
+      {viewTab === 'cal' && (
         <>
           <CalendarView
             medLogs={medLogs}
@@ -240,10 +249,12 @@ export default function History() {
           )}
         </>
       )}
+      </div>
 
-      {tab === 'list' && (
-        <>
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-1 -mx-4 px-4 scrollbar-hide">
+      {showList && (
+        <div>
+          {isDesktop && <h2 className="text-lg font-bold text-slate-700 mb-3">Registrazioni</h2>}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-1 -mx-4 px-4 scrollbar-hide lg:flex-wrap lg:overflow-visible lg:mx-0 lg:px-0">
             <button
               onClick={() => setListFilter(null)}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
@@ -379,8 +390,9 @@ export default function History() {
               <div className="text-center text-slate-400 py-12">Nessuna registrazione</div>
             )}
           </div>
-        </>
+        </div>
       )}
+      </div>
 
       {showModal && selectedDay && (
         <LogPastModal

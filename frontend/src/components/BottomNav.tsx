@@ -9,14 +9,18 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Impostazioni' },
 ]
 
-export default function BottomNav() {
+export function useNavItems() {
   const { currentUser } = useUser()
-  const items = currentUser?.is_admin
+  return currentUser?.is_admin
     ? [...navItems, { to: '/admin', icon: Shield, label: 'Admin' }]
     : navItems
+}
+
+export default function BottomNav() {
+  const items = useNavItems()
 
   return (
-    <nav className="bg-white border-t border-slate-200 safe-bottom">
+    <nav className="bg-white border-t border-slate-200 safe-bottom lg:hidden">
       <div className="flex">
         {items.map(({ to, icon: Icon, label }) => (
           <NavLink

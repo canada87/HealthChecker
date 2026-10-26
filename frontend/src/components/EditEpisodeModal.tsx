@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { X, Check, Trash2 } from 'lucide-react'
+import useEscapeKey from './useEscapeKey'
 import { api } from '../api'
 import type { IllnessEpisode } from '../types'
 
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function EditEpisodeModal({ episode, onClose, onSaved }: Props) {
+  useEscapeKey(onClose)
   const initStart = splitDateTime(episode.started_at)
   const [startDate, setStartDate] = useState(initStart.date)
   const [startTime, setStartTime] = useState(initStart.time)
@@ -85,9 +87,9 @@ export default function EditEpisodeModal({ episode, onClose, onSaved }: Props) {
   const today = format(new Date(), 'yyyy-MM-dd')
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center lg:p-6" onClick={onClose}>
       <div
-        className="bg-white rounded-t-3xl w-full max-w-lg p-5 pb-10 overflow-y-auto"
+        className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-lg p-5 pb-10 lg:pb-5 shadow-xl overflow-y-auto"
         style={{ maxHeight: '90vh' }}
         onClick={e => e.stopPropagation()}
       >

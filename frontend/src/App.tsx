@@ -7,6 +7,7 @@ import Stats from './pages/Stats'
 import Settings from './pages/Settings'
 import Admin from './pages/Admin'
 import BottomNav from './components/BottomNav'
+import Sidebar from './components/Sidebar'
 
 function AppRoutes() {
   const { currentUser } = useUser()
@@ -14,18 +15,23 @@ function AppRoutes() {
   if (!currentUser) return <SelectUser />
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 max-w-lg mx-auto">
-      <div className="flex-1 overflow-y-auto">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/stats" element={<Stats />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+    <div className="flex h-screen bg-slate-50">
+      <Sidebar />
+      <div className="flex-1 min-w-0 flex flex-col max-w-lg mx-auto lg:max-w-none">
+        <main className="flex-1 overflow-y-auto">
+          <div className="lg:max-w-6xl lg:mx-auto lg:px-6">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/stats" element={<Stats />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </main>
+        <BottomNav />
       </div>
-      <BottomNav />
     </div>
   )
 }

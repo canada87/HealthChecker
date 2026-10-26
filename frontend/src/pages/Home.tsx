@@ -72,7 +72,9 @@ export default function Home() {
         </div>
         <button
           onClick={() => setCurrentUser(null)}
-          className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 active:bg-slate-200"
+          className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 active:bg-slate-200 lg:hidden"
+          title="Cambia utente"
+          aria-label="Cambia utente"
         >
           <LogOut size={20} />
         </button>
@@ -120,7 +122,7 @@ export default function Home() {
             Passato
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {medications.map(med => {
             const isJust = justLogged === med.id
             return (
@@ -128,7 +130,7 @@ export default function Home() {
                 key={med.id}
                 onClick={() => handleLogMed(med)}
                 disabled={!!logging}
-                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col items-center gap-2 active:scale-95 transition-all disabled:opacity-70"
+                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col items-center gap-2 hover:shadow-md active:scale-95 transition-all disabled:opacity-70"
                 style={{ borderColor: isJust ? med.color : undefined, borderWidth: isJust ? 2 : undefined }}
               >
                 <div
@@ -142,7 +144,7 @@ export default function Home() {
             )
           })}
           {medications.length === 0 && (
-            <div className="col-span-2 text-center py-6 text-slate-400 text-sm">
+            <div className="col-span-full text-center py-6 text-slate-400 text-sm">
               <Plus size={24} className="mx-auto mb-1 opacity-50" />
               Aggiungi farmaci nelle impostazioni
             </div>
@@ -161,7 +163,7 @@ export default function Home() {
             Passato
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {illnesses.map(ill => {
             const ep = activeEpisodeForIllness(ill.id)
             const lastLog = ep?.logs[ep.logs.length - 1]
@@ -171,7 +173,7 @@ export default function Home() {
               <button
                 key={ill.id}
                 onClick={() => handleIllnessTap(ill)}
-                className="bg-white rounded-2xl p-4 shadow-sm border-2 flex flex-col items-center gap-2 active:scale-95 transition-all"
+                className="bg-white rounded-2xl p-4 shadow-sm border-2 flex flex-col items-center gap-2 hover:shadow-md active:scale-95 transition-all"
                 style={{ borderColor: ep ? ill.color : 'transparent', borderWidth: ep ? 2 : 0 }}
               >
                 <div className="relative">
@@ -199,7 +201,7 @@ export default function Home() {
             )
           })}
           {illnesses.length === 0 && (
-            <div className="col-span-2 text-center py-6 text-slate-400 text-sm">
+            <div className="col-span-full text-center py-6 text-slate-400 text-sm">
               <Plus size={24} className="mx-auto mb-1 opacity-50" />
               Aggiungi malattie nelle impostazioni
             </div>

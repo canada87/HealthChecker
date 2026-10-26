@@ -83,7 +83,7 @@ export default function Admin() {
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="grid gap-2 lg:grid-cols-2">
         {users.map(user => (
           <div key={user.id} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm">
             <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center font-bold text-indigo-600">

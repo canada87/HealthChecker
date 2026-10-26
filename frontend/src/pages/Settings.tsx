@@ -152,6 +152,7 @@ export default function Settings() {
         </div>
       </section>
 
+      <div className="lg:grid lg:grid-cols-2 lg:gap-8">
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-slate-700">💊 Farmaci</h2>
@@ -229,6 +230,7 @@ export default function Settings() {
           ))}
         </div>
       </section>
+      </div>
     </div>
   )
 }

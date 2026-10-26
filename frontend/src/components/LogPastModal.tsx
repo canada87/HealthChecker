@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { api } from '../api'
 import type { Medication, Illness } from '../types'
 import { X } from 'lucide-react'
+import useEscapeKey from './useEscapeKey'
 
 const LEVELS = [
   { value: 1, label: 'Lieve', color: '#22c55e' },
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function LogPastModal({ medications, illnesses, defaultDate, onClose, onSaved }: Props) {
+  useEscapeKey(onClose)
   const ref = defaultDate ?? new Date()
   const [date, setDate] = useState(format(ref, 'yyyy-MM-dd'))
   const [time, setTime] = useState(format(ref, 'HH:mm'))
@@ -50,11 +52,11 @@ export default function LogPastModal({ medications, illnesses, defaultDate, onCl
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
+      className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center lg:p-6"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-t-3xl w-full max-w-lg p-5 pb-10"
+        className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-lg p-5 pb-10 lg:pb-5 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">

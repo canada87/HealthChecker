@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { api } from '../api'
 import { X, Check } from 'lucide-react'
+import useEscapeKey from './useEscapeKey'
 
 interface Props {
   logId: number
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function EditLogModal({ logId, type, name, emoji, color, currentAt, onClose, onSaved }: Props) {
+  useEscapeKey(onClose)
   const [date, setDate] = useState(format(currentAt, 'yyyy-MM-dd'))
   const [time, setTime] = useState(format(currentAt, 'HH:mm'))
   const [saving, setSaving] = useState(false)
@@ -38,11 +40,11 @@ export default function EditLogModal({ logId, type, name, emoji, color, currentA
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
+      className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center lg:p-6"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-t-3xl w-full max-w-lg p-5 pb-10"
+        className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-lg p-5 pb-10 lg:pb-5 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
